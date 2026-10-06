@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+# Verify that the test suite detects a broken checker rule.
+#
+# Each mutant is a copy of the checker with one rule broken:
+#
+#   - one alternative removed from one PATTERNS regex, for every alternative;
+#   - one behavior in BEHAVIOR_MUTANTS changed.
+#
+# tests/run MUST fail for every mutant. A mutant that passes is a rule without a test.
+#
+# Exit status: 0 every mutant detected, 1 at least one mutant not detected.
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+check="$root/skills/doc-style/scripts/check"
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+mutant="$work/check"
+
+# Each entry is a name, a tab, and one sed expression applied to the checker.
+BEHAVIOR_MUTANTS=(
+	"front matter not removed	/NR == 1 \&\& \/^---/d"
+	"fenced code not removed	/fence = !fence/d"
+	"inline code not removed	s/gsub(\/\`\[^\`\]\*\`\/, \"CODE\"); //"
+	"proper noun not excluded	/proper_noun \"\$match\" \"\$snippet\" \&\& continue/d"
+	"sentence cut ignores closing emphasis	s/\[\.!?:\]\[\*\`\")\\\\\]\]\*/[.!?:]/"
+	"list marker does not start a paragraph	/\[0-9\]+\[\.)\]/s|/^|/^NEVER|"
+	"heading, table, blockquote join a paragraph	/^\t*\/\^\[\[:space:\]\]\*\[#|>\]\/ { flush(); next }$/d"
+	"tone question includes heading, table, blockquote	s/\^\[\^#|>\]\.\*/^.*/"
+	"default limit 26	s/^MAX_WORDS=25$/MAX_WORDS=26/"
+	"default limit 24	s/^MAX_WORDS=25$/MAX_WORDS=24/"
+	"limit is inclusive	s/count > limit/count >= limit/"
+	"--max-words ignored	s/MAX_WORDS=\"\${2:-}\"/MAX_WORDS=\"\$MAX_WORDS\"/"
+	"findings exit 0	/if ((found)); then/{n;s/exit 1/exit 0/}"
+	"missing file exit 1	/if ((missing)); then/{n;s/exit 2/exit 1/}"
+	"usage error exit 1	/^usage() {/,/^}/s/exit 2/exit 1/"
+)
+
+# List every top-level alternative of every PATTERNS regex as LABEL<TAB>INDEX<TAB>TEXT,
+# or, with -v label= -v drop=, print the checker with that one alternative removed.
+# A "|" inside parentheses or a bracket expression is not a top-level separator.
+# shellcheck disable=SC2016 # An awk program. Its $ fields belong to awk, not to the shell.
+patterns_awk='
+	function split_alts(re, alts,  i, c, depth, bracket, n, cur) {
+		n = 0; depth = 0; bracket = 0; cur = ""
+		for (i = 1; i <= length(re); i++) {
+			c = substr(re, i, 1)
+			if (bracket) {
+				if (substr(re, i, 2) == "[:") {
+					cur = cur substr(re, i, index(substr(re, i), ":]") + 1)
+					i += index(substr(re, i), ":]")
+					continue
+				}
+				if (c == "]") bracket = 0
+			} else if (c == "[") {
+				bracket = 1
+			} else if (c == "(") {
+				depth++
+			} else if (c == ")") {
+				depth--
+			} else if (c == "|" && depth == 0) {
+				alts[++n] = cur; cur = ""; continue
+			}
+			cur = cur c
+		}
+		alts[++n] = cur
+		return n
+	}
+	/^\t"[a-z]+\t.*"$/ {
+		line = substr($0, 3, length($0) - 3)
+		tab = index(line, "\t")
+		lab = substr(line, 1, tab - 1)
+		n = split_alts(substr(line, tab + 1), alts)
+		if (drop == "") {
+			for (i = 1; i <= n; i++) printf "%s\t%d\t%s\n", lab, i, alts[i]
+			next
+		}
+		if (lab == label) {
+			out = ""
+			for (i = 1; i <= n; i++) if (i != drop) out = out (out == "" ? "" : "|") alts[i]
+			printf "\t\"%s\t%s\"\n", lab, out
+			next
+		}
+	}
+	drop != "" { print }
+'
+
+detected=0
+undetected=0
+
+# try NAME runs the suite against the mutant and records the result.
+try() {
+	if cmp -s "$check" "$mutant"; then
+		undetected=$((undetected + 1))
+		echo "NOT APPLIED: $1"
+		return
+	fi
+	chmod +x "$mutant"
+	if CHECK="$mutant" "$root/tests/run" >/dev/null 2>&1; then
+		undetected=$((undetected + 1))
+		echo "NOT DETECTED: $1"
+		return
+	fi
+	detected=$((detected + 1))
+}
+
+while IFS=$'\t' read -r label index text; do
+	awk -v label="$label" -v drop="$index" "$patterns_awk" "$check" >"$mutant"
+	regex="$(grep -P "^\t\"$label\t" "$mutant" | cut -f2 | sed 's/"$//')"
+	status=0
+	grep -E -i -- "$regex" /dev/null || status=$?
+	if ((status == 2)); then
+		undetected=$((undetected + 1))
+		echo "INVALID: [$label] without $text: $regex"
+		continue
+	fi
+	try "[$label] without $text"
+done < <(awk -v drop= "$patterns_awk" "$check")
+
+for entry in "${BEHAVIOR_MUTANTS[@]}"; do
+	sed -e "${entry#*	}" "$check" >"$mutant"
+	try "${entry%%	*}"
+done
+
+echo "$detected detected, $undetected not detected"
+((undetected == 0))

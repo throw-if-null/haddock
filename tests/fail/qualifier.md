@@ -1,0 +1,29 @@
+<!-- Rule: remove vague qualifiers. Each item uses one entry from the checker's qualifier list. -->
+
+- just
+- simply
+- basically
+- obviously
+- of course
+- actually
+- fairly
+- quite
+- pretty much
+- a bit
+- somewhat
+- very
+- really
+- more or less
+- nicely
+- easily
+- worth doing
+- worth knowing
+- worth the effort
+- ideally
+- hopefully
+- probably
+- mostly
+- various
+- in general
+- generally speaking
+- simple enough

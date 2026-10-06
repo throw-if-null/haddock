@@ -1,0 +1,44 @@
+<!-- Rule: replace every idiom and metaphor with the behavior it describes. Each item uses one entry from the checker's idiom list. -->
+
+- load-bearing
+- belt and braces
+- has teeth
+- not decoration
+- learned the hard way
+- that is the point
+- that was the point
+- that's the point
+- blast radius
+- under the hood
+- out of the box
+- silver bullet
+- low-hanging fruit
+- rabbit hole
+- first-class citizen
+- heavy lifting
+- battle-tested
+- bulletproof
+- moving parts
+- at the end of the day
+- in the wild
+- boils down to
+- the trick is
+- rule of thumb
+- bells and whistles
+- footgun
+- gotcha
+- happy path
+- glue code
+- sanity check
+- magic
+- hand-wave
+- deep dive
+- baked in
+- table stakes
+- paper over
+- band-aid
+- move the needle
+- nail down
+- swiss army
+- apples to apples
+- the name of the game
