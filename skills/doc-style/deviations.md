@@ -1,10 +1,10 @@
 # Deviations from ASD-STE100
 
-The rules in [rules.md](rules.md) are based on ASD-STE100, Simplified Technical English. This
-file lists each difference between the two.
+The rules in [rules.md](rules.md) use ASD-STE100, Simplified Technical English, as a starting
+point. They do not implement the standard. This file lists where the two differ, so a reader
+who knows STE can see which rules to expect.
 
-The STE rule descriptions in this file are not yet verified against the published text of
-ASD-STE100. Issue: TODO.
+The STE column paraphrases the standard. It is not a quotation.
 
 ## Status values
 
