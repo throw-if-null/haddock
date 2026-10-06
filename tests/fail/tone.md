@@ -4,4 +4,4 @@
 - Is the job done?
 - cool
 - awesome
-- nice!x
+- nice! Done.

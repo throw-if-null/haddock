@@ -34,7 +34,7 @@ PATTERNS=(
 	"filler	note that|worth noting|keep in mind|bear in mind|as you can see|\blet's\b|\blet us\b|we'll|we will now|you'll want|feel free|don't worry|remember that|please note|that said|to be honest|as mentioned (above|earlier)"
 	"anthropomorphism	talks? to|knows about|is smart enough|magically|decides to|is happy|complains|cares about|is aware of|doesn't like|wants to know"
 	"hype	\bleverage|\butilize|seamless|\brobust\b|\bpowerful\b|cutting.edge|state of the art|game.chang|best.in.class|\bblazing|effortless|rich set of|\belegant\b|\bdelightful\b|\bcomprehensive\b"
-	"tone	!\s*$|^[^#|>].*\?\s*$|\bcool\b|\bawesome\b|\bnice!\b"
+	"tone	!\s*$|^[^#|>].*\?\s*$|\bcool\b|\bawesome\b|\bnice!"
 	"chain	—|[[:space:]]--[[:space:]]|;[[:space:]]"
 )
 
@@ -69,6 +69,9 @@ long_sentences() {
 			gsub(/[.!?:][*`")\]]*[[:space:]]+/, "&@@CUT@@", tmp)
 			n = split(tmp, parts, "@@CUT@@")
 			for (i = 1; i <= n; i++) {
+				# Leading or trailing whitespace makes split() return an empty field, which
+				# is not a word.
+				gsub(/^[[:space:]]+|[[:space:]]+$/, "", parts[i])
 				count = split(parts[i], words, /[[:space:]]+/)
 				if (count > limit)
 					printf "%s:%d: [length] %d-word sentence: %.56s...\n", file, start, count, parts[i]
@@ -80,7 +83,9 @@ long_sentences() {
 		/^[[:space:]]*([-*+]|[0-9]+[.)])[[:space:]]/ {
 			flush()
 			start = NR
+			# The list marker is not a word of the sentence.
 			buf = $0
+			sub(/^[[:space:]]*([-*+]|[0-9]+[.)])[[:space:]]+/, "", buf)
 			next
 		}
 		{

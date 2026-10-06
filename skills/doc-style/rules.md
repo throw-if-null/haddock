@@ -52,7 +52,7 @@ Apply these rules to text output, code discussions, architecture reviews, commit
 ## Sentences
 
 - State one fact, requirement, or instruction per sentence.
-- Keep sentences under 25 words. Split a longer sentence.
+- Keep sentences to 25 words or fewer. Split a longer sentence.
 - Split a clause chain joined by an em dash, a semicolon, or a trailing `, which` into
   separate sentences.
 - Use active voice when it names the component that acts.

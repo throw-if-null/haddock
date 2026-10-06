@@ -26,6 +26,8 @@ BEHAVIOR_MUTANTS=(
 	"proper noun not excluded	/proper_noun \"\$match\" \"\$snippet\" \&\& continue/d"
 	"sentence cut ignores closing emphasis	s/\[\.!?:\]\[\*\`\")\\\\\]\]\*/[.!?:]/"
 	"list marker does not start a paragraph	/\[0-9\]+\[\.)\]/s|/^|/^NEVER|"
+	"surrounding whitespace counted as a word	/gsub(\/^\[\[:space:\]\]+|\[\[:space:\]\]+\$\/, \"\", parts\[i\])/d"
+	"list marker counted as a word	/sub(\/^\[\[:space:\]\]\*(\[-\*+\]|\[0-9\]+\[\.)\])\[\[:space:\]\]+\/, \"\", buf)/d"
 	"heading, table, blockquote join a paragraph	/^\t*\/\^\[\[:space:\]\]\*\[#|>\]\/ { flush(); next }$/d"
 	"tone question includes heading, table, blockquote	s/\^\[\^#|>\]\.\*/^.*/"
 	"default limit 26	s/^MAX_WORDS=25$/MAX_WORDS=26/"
