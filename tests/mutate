@@ -8,7 +8,8 @@
 #
 # tests/run MUST fail for every mutant. A mutant that passes is a rule without a test.
 #
-# Exit status: 0 every mutant detected, 1 at least one mutant not detected.
+# Exit status: 0 every mutant detected, 1 at least one mutant not detected, 2 tests/run
+# fails on the unmodified checker.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -84,6 +85,13 @@ patterns_awk='
 	}
 	drop != "" { print }
 '
+
+# A suite that already fails, or that cannot run, fails for every mutant. Each mutant
+# then counts as detected although no test detected it.
+if ! "$root/tests/run" >/dev/null 2>&1; then
+	echo "tests/run fails on the unmodified checker. Run it and fix the failure first." >&2
+	exit 2
+fi
 
 detected=0
 undetected=0

@@ -1,108 +1,17 @@
 #!/usr/bin/env bash
-# Run the doc-style checker against the test fixtures.
-#
-#   pass/NAME.md       MUST produce no output and exit 0.
-#   fail/NAME.md       MUST exit 1 and print exactly fail/NAME.expected.
-#                      Line 1 MUST be an HTML comment that states the rule.
-#   fail/NAME.args     Optional. Checker options for fail/NAME.md, on one line.
+# Run the test suite with bats-core. Arguments are passed to bats, for example
+# --filter idiom.
 #
 # CHECK selects the checker under test. The default is the checker in this repository.
 #
-# Exit status: 0 all cases pass, 1 at least one case fails.
+# Exit status: 0 all tests pass, 1 at least one test fails, 2 bats is not installed.
 set -euo pipefail
 
-root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-tests="$root/tests"
-CHECK="${CHECK:-$root/skills/doc-style/scripts/check}"
+tests="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-passed=0
-failed=0
-
-ok() { passed=$((passed + 1)); }
-
-fail() {
-	failed=$((failed + 1))
-	echo "FAIL: $*"
-}
-
-# run_check DIR ARGS... runs the checker in DIR and sets out, errout, and status.
-run_check() {
-	local dir="$1" errfile
-	shift
-	errfile="$(mktemp)"
-	status=0
-	out="$(cd "$dir" && "$CHECK" "$@" 2>"$errfile")" || status=$?
-	errout="$(cat "$errfile")"
-	rm -f "$errfile"
-}
-
-for fixture in "$tests"/pass/*.md; do
-	name="pass/${fixture##*/}"
-	run_check "$tests/pass" "${fixture##*/}"
-	if ((status != 0)) || [ -n "$out" ]; then
-		fail "$name: expected no findings and exit 0, got exit $status"
-		printf '%s\n' "$out"
-		continue
-	fi
-	ok
-done
-
-for fixture in "$tests"/fail/*.md; do
-	base="${fixture%.md}"
-	name="fail/${fixture##*/}"
-	if ! head -n 1 "$fixture" | grep -q '^<!-- Rule: .* -->$'; then
-		fail "$name: line 1 does not state the rule"
-		continue
-	fi
-	if [ ! -f "$base.expected" ]; then
-		fail "$name: no ${base##*/}.expected file"
-		continue
-	fi
-	args=()
-	if [ -f "$base.args" ]; then
-		read -r -a args <"$base.args"
-	fi
-	run_check "$tests/fail" "${args[@]}" "${fixture##*/}"
-	if ((status != 1)); then
-		fail "$name: expected exit 1, got exit $status"
-		continue
-	fi
-	if ! diff -u "$base.expected" <(printf '%s\n' "$out") >/dev/null; then
-		fail "$name: output differs from ${base##*/}.expected"
-		diff -u "$base.expected" <(printf '%s\n' "$out") || true
-		continue
-	fi
-	ok
-done
-
-# expect_usage NAME EXPECTED_STATUS EXPECTED_STDERR ARGS... checks one command-line case.
-expect_usage() {
-	local name="$1" want_status="$2" want_err="$3"
-	shift 3
-	run_check "$tests/fail" "$@"
-	if ((status != want_status)); then
-		fail "usage: $name: expected exit $want_status, got exit $status"
-		return
-	fi
-	if [[ "$errout" != *"$want_err"* ]]; then
-		fail "usage: $name: stderr does not contain '$want_err': $errout"
-		return
-	fi
-	ok
-}
-
-expect_usage "no arguments" 2 "usage:"
-expect_usage "unknown option" 2 "unknown option: --nope" --nope chain.md
-expect_usage "non-numeric --max-words" 2 "usage:" --max-words x chain.md
-expect_usage "missing file" 2 "no such file: missing.md" missing.md
-
-# A missing file does not stop the scan of the other files.
-run_check "$tests/fail" missing.md chain.md
-if ((status == 2)) && [[ "$out" == *"chain.md:3: [chain]"* ]]; then
-	ok
-else
-	fail "usage: missing file with another file: expected exit 2 and findings, got exit $status"
+if ! command -v bats >/dev/null; then
+	echo "bats not found. Install bats-core 1.7.0 or later: https://github.com/bats-core/bats-core" >&2
+	exit 2
 fi
 
-echo "$passed passed, $failed failed"
-((failed == 0))
+exec bats "$@" "$tests"
