@@ -1,0 +1,17 @@
+{
+  "description": "Run the doc-style checker on each Markdown file after Claude Code edits it.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.local/share/haddock/hooks/check-markdown\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

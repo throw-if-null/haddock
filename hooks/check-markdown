@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# PostToolUse hook: run the doc-style checker on the Markdown files an agent edited.
+#
+# Claude Code and Codex send the hook event as JSON on stdin. The script reads the file
+# paths from it:
+#
+#   - Edit and Write (Claude Code): tool_input.file_path
+#   - apply_patch (Codex): the "*** Update File:" and "*** Add File:" lines of the patch in
+#     tool_input.command
+#
+# It runs the checker on the Markdown files among them, from the directory in cwd, so
+# that a .doc-style file applies as it does on the command line. When the checker reports
+# candidates, the script prints one JSON object: additionalContext carries the report to
+# the agent, and systemMessage shows it to the user. Both agents read these fields. When
+# the checker reports nothing, the script prints nothing.
+#
+# The exit status is always 0. PostToolUse cannot undo an edit, and a candidate is not an
+# error. A problem in the hook itself goes to stderr, which the agents keep in their
+# debug log.
+#
+# The checker is ../skills/doc-style/scripts/check, relative to this script. DOC_STYLE_CHECK
+# overrides that path. The script requires jq.
+set -uo pipefail
+
+here="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+check="${DOC_STYLE_CHECK:-$here/../skills/doc-style/scripts/check}"
+
+input="$(cat)"
+
+if ! jq -e . >/dev/null 2>&1 <<<"$input"; then
+	echo "check-markdown: stdin is not JSON" >&2
+	exit 0
+fi
+
+tool="$(jq -r '.tool_name // ""' <<<"$input")"
+cwd="$(jq -r '.cwd // ""' <<<"$input")"
+[ -n "$cwd" ] || cwd="$PWD"
+
+# One path per line. apply_patch names the files inside the patch text.
+case "$tool" in
+apply_patch)
+	paths="$(jq -r '.tool_input.command // .tool_input.patch // ""' <<<"$input" |
+		sed -n -E 's/^\*\*\* (Update|Add) File: //p')"
+	;;
+*)
+	paths="$(jq -r '.tool_input.file_path // ""' <<<"$input")"
+	;;
+esac
+
+# A relative path stays relative. The checker runs from cwd, so the report shows the path
+# as the agent wrote it.
+files=()
+while IFS= read -r path; do
+	[ -n "$path" ] || continue
+	[[ "${path,,}" == *.md || "${path,,}" == *.markdown ]] || continue
+	if [[ "$path" == /* ]]; then
+		[ -f "$path" ] || continue
+	else
+		[ -f "$cwd/$path" ] || continue
+	fi
+	files+=("$path")
+done <<<"$paths"
+
+((${#files[@]})) || exit 0
+
+status=0
+report="$(cd "$cwd" && "$check" "${files[@]}" 2>&1)" || status=$?
+
+case "$status" in
+0) exit 0 ;;
+1) ;;
+*) report="doc-style checker failed (exit $status):"$'\n'"$report" ;;
+esac
+
+jq -n --arg report "$report" '{
+	hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext: $report },
+	systemMessage: $report
+}'
