@@ -10,7 +10,7 @@ set -euo pipefail
 tests="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if ! command -v bats >/dev/null; then
-	echo "bats not found. Install bats-core 1.7.0 or later: https://github.com/bats-core/bats-core" >&2
+	echo "bats not found. Run mise install, or install bats-core 1.7.0 or later." >&2
 	exit 2
 fi
 
