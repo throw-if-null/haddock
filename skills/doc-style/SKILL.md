@@ -39,6 +39,9 @@ verbatim.
    ${CLAUDE_SKILL_DIR}/scripts/check docs/example.md
    ```
 
+   `${CLAUDE_SKILL_DIR}` is the directory that holds this file. Claude Code substitutes it.
+   Other agents, for example Codex, use the path of that directory.
+
    The checker reports candidates, not errors. Judge each hit. Rewrite it, or keep it and
    state the reason. A hit inside a quotation, a rules table, or an example of what not to
    write is expected. Keep it.
