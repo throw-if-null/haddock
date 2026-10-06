@@ -31,3 +31,13 @@ setup() {
 	run -0 "$CHECK" words.md
 	[ -z "$output" ]
 }
+
+@test "suppress: a region without an enable comment suppresses every finding to the end of the file" {
+	run -0 "$CHECK" suppress-region.md
+	[ -z "$output" ]
+}
+
+@test "suppress: a directive line ends the paragraph before it" {
+	run -0 "$CHECK" suppress-paragraph.md
+	[ -z "$output" ]
+}

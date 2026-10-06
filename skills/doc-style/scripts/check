@@ -11,11 +11,22 @@
 # The patterns assume Markdown. Running it on a source file also reports the file's own
 # syntax, so on a source file judge the hits inside comments and ignore the rest.
 #
+# A rule ID is a label that the script prints, for example tone or length. Two mechanisms
+# suppress hits, and ../SKILL.md describes both:
+#
+#   - A line that holds only <!-- doc-style-disable RULE... --> suppresses the listed rules
+#     until a line that holds only <!-- doc-style-enable RULE... -->, or until the end of
+#     the file. Without a rule ID, or with all, the comment applies to every rule.
+#   - The nearest .doc-style file, searched from the directory of the checked file up to
+#     the root of its git repository, holds lines of the form PATTERN RULE... A file whose
+#     path relative to the .doc-style file matches PATTERN is not checked for those rules.
+#
 #   check docs/secrets.md README.md
 #   check --max-words 30 docs/architecture.md
 #
-# Exit status: 0 no candidates, 1 candidates reported, 2 usage error or missing file.
-# A missing file is reported and the remaining files are still scanned.
+# Exit status: 0 no candidates, 1 candidates reported, 2 usage error, missing file, or
+# invalid suppression. A file with an error is reported and the remaining files are still
+# scanned.
 set -euo pipefail
 
 err() { echo "$*" >&2; }
@@ -38,6 +49,21 @@ PATTERNS=(
 	"chain	—|[[:space:]]--[[:space:]]|;[[:space:]]"
 )
 
+# Every rule ID: the PATTERNS labels and length.
+RULES=()
+for entry in "${PATTERNS[@]}"; do
+	RULES+=("${entry%%	*}")
+done
+RULES+=(length)
+
+# A line that starts with this extended regular expression is a suppression directive.
+DIRECTIVE='^[[:space:]]*<!--[[:space:]]*doc-style-'
+
+# is_rule ID succeeds when ID is a rule ID or all.
+is_rule() {
+	[[ " ${RULES[*]} all " == *" $1 "* ]]
+}
+
 # Blank out front matter and fenced code blocks, and reduce every inline code span to CODE,
 # keeping one output line per input line so that grep -n reports the original line
 # numbers and a code span still counts as one word.
@@ -51,15 +77,16 @@ strip_code() {
 	' "$1"
 }
 
-# Report sentences longer than MAX_WORDS. Paragraphs are accumulated because a sentence
-# spans several wrapped lines. The reported line is where the paragraph starts.
+# Read the code-stripped text of FILE on stdin and report sentences longer than MAX_WORDS.
+# Paragraphs are accumulated because a sentence spans several wrapped lines. The reported
+# line is where the paragraph starts.
 #
 # A list marker starts a new paragraph. Without that rule a list of short items is
 # accumulated into one buffer and reported as a single long sentence. A wrapped
 # continuation line carries no marker, so it still joins the item above it.
 long_sentences() {
 	local file="$1"
-	strip_code "$file" | awk -v file="$file" -v limit="$MAX_WORDS" '
+	awk -v file="$file" -v limit="$MAX_WORDS" '
 		function flush(  tmp, parts, words, n, i, count) {
 			if (buf ~ /^[[:space:]]*$/) { buf = ""; return }
 			tmp = buf
@@ -106,15 +133,123 @@ proper_noun() {
 	esac
 }
 
+# Read the code-stripped text of FILE on stdin and print LINE<TAB>RULE... for every line
+# inside a disabled region. A directive outside a code block is the only content of its
+# line. Errors go to stderr, and the exit status is then 1.
+inline_regions() {
+	awk -v file="$1" -v rules="${RULES[*]}" -v directive="$DIRECTIVE" '
+		BEGIN { n = split(rules, list, " "); for (i = 1; i <= n; i++) known[list[i]] = 1 }
+		$0 ~ directive {
+			text = $0
+			if (!sub(/[[:space:]]*-->[[:space:]]*$/, "", text)) { printf "%s:%d: directive does not end with -->\n", file, NR > "/dev/stderr"; bad = 1; next }
+			sub(/^[[:space:]]*<!--[[:space:]]*/, "", text)
+			n = split(text, word, /[[:space:]]+/)
+			if (word[1] != "doc-style-disable" && word[1] != "doc-style-enable") { printf "%s:%d: unknown directive: %s\n", file, NR, word[1] > "/dev/stderr"; bad = 1; next }
+			split("", ids)
+			if (n == 1) for (r in known) ids[r] = 1
+			for (i = 2; i <= n; i++) {
+				if (word[i] == "all") { for (r in known) ids[r] = 1; continue }
+				if (!(word[i] in known)) { printf "%s:%d: unknown rule: %s\n", file, NR, word[i] > "/dev/stderr"; bad = 1; continue }
+				ids[word[i]] = 1
+			}
+			for (r in ids) {
+				if (word[1] == "doc-style-disable") off[r] = 1
+				else delete off[r]
+			}
+			next
+		}
+		{
+			set = ""
+			for (r in off) set = set " " r
+			if (set != "") printf "%d\t%s \n", NR, set
+		}
+		END { exit bad }
+	'
+}
+
+# Print the .doc-style file that applies to FILE: the nearest one in the directory of FILE
+# or above it. The search stops at the root of the git repository that holds FILE, so a
+# file outside the repository does not change the result. A worktree or a submodule has a
+# .git file, not a directory.
+find_config() {
+	local dir
+	dir="$(cd "$(dirname "$1")" && pwd -P)"
+	while :; do
+		if [ -f "$dir/.doc-style" ]; then
+			printf '%s\n' "$dir/.doc-style"
+			return 0
+		fi
+		[ -e "$dir/.git" ] && return 1
+		[ "$dir" = / ] && return 1
+		dir="$(dirname "$dir")"
+	done
+}
+
+# Print the rule IDs that CONFIG disables for FILE. Each CONFIG line is a pattern and one or
+# more rule IDs. The pattern matches the path of FILE relative to the directory of CONFIG,
+# and * also matches /. A line that starts with # is a comment. Errors go to stderr, and
+# the status is then 2.
+config_rules() {
+	local config="$1" file="$2" rel line pattern rule matched n=0 bad=0 out=""
+	local -a ids
+	rel="$(cd "$(dirname "$file")" && pwd -P)/${file##*/}"
+	rel="${rel#"${config%/*}"/}"
+	while IFS= read -r line || [ -n "$line" ]; do
+		n=$((n + 1))
+		read -r -a ids <<<"$line"
+		((${#ids[@]})) || continue
+		[[ "${ids[0]}" == "#"* ]] && continue
+		pattern="${ids[0]}"
+		ids=("${ids[@]:1}")
+		if ((${#ids[@]} == 0)); then
+			err "$config:$n: no rule after pattern: $pattern"
+			bad=1
+			continue
+		fi
+		matched=0
+		# shellcheck disable=SC2053 # The pattern is a glob.
+		[[ "$rel" == $pattern ]] && matched=1
+		for rule in "${ids[@]}"; do
+			if ! is_rule "$rule"; then
+				err "$config:$n: unknown rule: $rule"
+				bad=1
+			elif ((matched)) && [ "$rule" = all ]; then
+				out+=" ${RULES[*]}"
+			elif ((matched)); then
+				out+=" $rule"
+			fi
+		done
+	done <"$config"
+	((bad == 0)) || return 2
+	printf '%s\n' "$out"
+}
+
+# suppressed RULE LINE succeeds when RULE is disabled at LINE, by the .doc-style file or by
+# an inline directive. It reads config_off and line_off from the calling scan_file.
+suppressed() {
+	[[ " $config_off ${line_off[$2]:-} " == *" $1 "* ]]
+}
+
 scan_file() {
-	local file="$1" stripped entry label regex hits line match snippet
+	local file="$1" stripped entry label regex hits line match snippet config config_off="" regions rules finding
 	local -a src
+	local -A line_off=()
 	if [ ! -f "$file" ]; then
 		err "no such file: $file"
 		return 2
 	fi
+	if config="$(find_config "$file")"; then
+		config_off="$(config_rules "$config" "$file")" || return 2
+	fi
 	mapfile -t src <"$file"
 	stripped="$(strip_code "$file")"
+	regions="$(inline_regions "$file" <<<"$stripped")" || return 2
+	while IFS=$'\t' read -r line rules; do
+		[ -n "$line" ] || continue
+		line_off[$line]="$rules"
+	done <<<"$regions"
+	# A directive line matches no pattern and ends the paragraph before it.
+	stripped="$(sed -E "s/${DIRECTIVE}.*//" <<<"$stripped")"
 	{
 		for entry in "${PATTERNS[@]}"; do
 			label="${entry%%	*}"
@@ -125,11 +260,15 @@ scan_file() {
 				[ -n "$line" ] || continue
 				snippet="${src[line - 1]}"
 				proper_noun "$match" "$snippet" && continue
+				suppressed "$label" "$line" && continue
 				snippet="${snippet#"${snippet%%[![:space:]]*}"}"
 				printf '%s:%s: [%s] %s | %.52s\n' "$file" "$line" "$label" "$match" "$snippet"
 			done <<<"$hits"
 		done
-		long_sentences "$file"
+		long_sentences "$file" <<<"$stripped" | while IFS= read -r finding; do
+			line="${finding#"$file":}"
+			suppressed length "${line%%:*}" || printf '%s\n' "$finding"
+		done
 	} | sort -t: -k2,2n -s
 }
 
@@ -156,14 +295,14 @@ done
 ((${#FILES[@]})) || usage
 
 found=0
-missing=0
+failed=0
 for file in "${FILES[@]}"; do
-	# scan_file returns 2 for a missing file. Capture the status so that one
-	# unreadable path does not end the run under set -e.
+	# scan_file returns 2 for a missing file or an invalid suppression. Capture the
+	# status so that one bad file does not end the run under set -e.
 	status=0
 	output="$(scan_file "$file")" || status=$?
 	if ((status)); then
-		missing=1
+		failed=1
 		continue
 	fi
 	[ -n "$output" ] || continue
@@ -176,7 +315,7 @@ if ((found)); then
 	echo "Candidates reported. Rewrite each one, or keep it and state the reason."
 fi
 
-if ((missing)); then
+if ((failed)); then
 	exit 2
 fi
 

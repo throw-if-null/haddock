@@ -65,6 +65,38 @@ The checker cannot detect these. Verify each one before reporting the work compl
 - **Rhetorical framing.** Headings and openers describe content, not the reader's expected
   reaction.
 
+## Suppression
+
+Suppress a finding only when the text is correct as written and a rewrite cannot remove the
+finding. Examples are a quoted prompt and a list of excluded words. State the reason in a
+comment next to the suppression.
+
+A rule ID is a label that the checker prints: `idiom`, `qualifier`, `filler`,
+`anthropomorphism`, `hype`, `tone`, `chain`, or `length`. `all` means every rule.
+
+A line that holds only a disable comment suppresses the listed rules. The region ends at a
+line that holds only the matching enable comment, or at the end of the file. A comment
+without a rule ID applies to every rule.
+
+```markdown
+<!-- The prompt is quoted from the installer. -->
+<!-- doc-style-disable tone -->
+The installer stops at the prompt Continue?
+<!-- doc-style-enable tone -->
+```
+
+To suppress rules in whole files, add a line to a `.doc-style` file. Each line is a path
+pattern and one or more rule IDs. The pattern matches the path relative to the
+`.doc-style` file, and `*` also matches `/`. A line that starts with `#` is a comment.
+
+```text
+# The glossary lists the words that the rules exclude.
+docs/glossary.md   idiom qualifier filler hype
+```
+
+The checker uses the nearest `.doc-style` file between the checked file and the root of its
+git repository. A `.doc-style` file above the repository root does not apply.
+
 ## Constraints
 
 - Change prose only. A style rewrite MUST NOT change technical content. State separately

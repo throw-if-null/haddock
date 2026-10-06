@@ -51,3 +51,13 @@ setup() {
 	run -1 "$CHECK" --max-words 10 length-max-words.md
 	assert_snapshot length-max-words.expected
 }
+
+@test "suppress: a disable comment suppresses the listed rules until the enable comment" {
+	run -1 "$CHECK" suppress-inline.md
+	assert_snapshot suppress-inline.expected
+}
+
+@test "suppress: a directive inside code is not a directive" {
+	run -1 "$CHECK" suppress-code.md
+	assert_snapshot suppress-code.expected
+}
