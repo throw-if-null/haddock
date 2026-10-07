@@ -28,7 +28,7 @@ verbatim.
 
 ## Procedure
 
-1. Read the project agent instructions (`CLAUDE.md` or `AGENTS.md`) if they exist. A
+1. Read the project `CLAUDE.md` if it exists. A
    project rule overrides a rule in this skill when the two conflict. Report the conflict.
 2. Read the file you are about to change. Read one sibling document in the same directory.
    Match the existing terminology, heading depth, and table conventions.
@@ -39,8 +39,7 @@ verbatim.
    ${CLAUDE_SKILL_DIR}/scripts/check docs/example.md
    ```
 
-   `${CLAUDE_SKILL_DIR}` is the directory that holds this file. Claude Code substitutes it.
-   Other agents, for example Codex, use the path of that directory.
+   `${CLAUDE_SKILL_DIR}` is the directory that holds this file.
 
    The checker reports candidates, not errors. Judge each hit. Rewrite it, or keep it and
    state the reason. A hit inside a quotation, a rules table, or an example of what not to

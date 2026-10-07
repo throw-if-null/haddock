@@ -1,5 +1,5 @@
 {
-  "description": "Run the doc-style checker on each Markdown file after Claude Code edits it.",
+  "description": "Run the doc-style checker on a Markdown file after Claude Code edits it.",
   "hooks": {
     "PostToolUse": [
       {

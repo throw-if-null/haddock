@@ -1,7 +1,6 @@
 #!/usr/bin/env bats
-# The PostToolUse hook in hooks/check-markdown, and the two hook configuration files.
-# Each test writes a hook event as JSON to the hook's stdin, the way Claude Code and
-# Codex do.
+# The PostToolUse hook in hooks/check-markdown and its configuration file. Each test
+# writes a hook event as JSON to the hook's stdin, the way Claude Code does.
 
 setup() {
 	load test_helper
@@ -16,12 +15,6 @@ setup() {
 event() {
 	jq -n --arg tool "$1" --arg file "$2" --arg cwd "$PWD" \
 		'{hook_event_name: "PostToolUse", tool_name: $tool, cwd: $cwd, tool_input: {file_path: $file}}'
-}
-
-# patch_event PATCH prints a Codex hook event for an apply_patch call with PATCH.
-patch_event() {
-	jq -n --arg patch "$1" --arg cwd "$PWD" \
-		'{hook_event_name: "PostToolUse", tool_name: "apply_patch", cwd: $cwd, tool_input: {command: $patch}}'
 }
 
 @test "hook: an Edit of a Markdown file with candidates prints them for the agent and the user" {
@@ -60,21 +53,6 @@ patch_event() {
 	[ -z "$output" ]
 }
 
-@test "hook: an apply_patch call is checked for each updated or added Markdown file" {
-	patch=$'*** Begin Patch\n*** Update File: chain.md\n@@\n-a\n+b\n*** Add File: words.md\n+text\n*** Delete File: gone.md\n*** End Patch'
-	run -0 "$HOOK" < <(patch_event "$patch")
-	context="$(jq -r '.hookSpecificOutput.additionalContext' <<<"$output")"
-	[[ "$context" == *"chain.md:3: [chain]"* ]]
-	[[ "$context" != *"words.md"* ]]
-	[[ "$context" != *"gone.md"* ]]
-}
-
-@test "hook: an apply_patch call that touches no Markdown file prints nothing" {
-	patch=$'*** Begin Patch\n*** Update File: main.py\n@@\n-a\n+b\n*** End Patch'
-	run -0 "$HOOK" < <(patch_event "$patch")
-	[ -z "$output" ]
-}
-
 @test "hook: a checker error is reported to the agent and the user" {
 	printf 'chain.md tnoe\n' >.doc-style
 	run -0 "$HOOK" < <(event Edit chain.md)
@@ -96,24 +74,13 @@ patch_event() {
 	[ "$(jq -r '.systemMessage' <<<"$output")" = "stub finding" ]
 }
 
-@test "config: both hook files are valid JSON, match PostToolUse, and run check-markdown" {
-	local config
-	for config in claude-code.json codex.json; do
-		jq -e '.hooks.PostToolUse[0].hooks[0] | .type == "command" and (.command | test("check-markdown"))' \
-			"$BATS_TEST_DIRNAME/../hooks/$config"
-	done
+@test "config: the hook file is valid JSON, matches PostToolUse, and runs check-markdown" {
+	jq -e '.hooks.PostToolUse[0].hooks[0] | .type == "command" and (.command | test("check-markdown"))' \
+		"$BATS_TEST_DIRNAME/../hooks/claude-code.json"
 }
 
 @test "config: the Claude Code matcher covers Edit and Write" {
 	matcher="$(jq -r '.hooks.PostToolUse[0].matcher' "$BATS_TEST_DIRNAME/../hooks/claude-code.json")"
 	[[ Edit =~ ^($matcher)$ ]]
 	[[ Write =~ ^($matcher)$ ]]
-}
-
-@test "config: the Codex matcher covers apply_patch, Edit, and Write" {
-	matcher="$(jq -r '.hooks.PostToolUse[0].matcher' "$BATS_TEST_DIRNAME/../hooks/codex.json")"
-	[[ apply_patch =~ $matcher ]]
-	[[ Edit =~ $matcher ]]
-	[[ Write =~ $matcher ]]
-	[[ ! Bash =~ $matcher ]]
 }
