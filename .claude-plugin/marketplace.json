@@ -1,0 +1,12 @@
+{
+  "name": "throw-if-null",
+  "description": "Plugins from throw-if-null.",
+  "owner": { "name": "Mirza Merdovic" },
+  "plugins": [
+    {
+      "name": "haddock",
+      "source": "./",
+      "description": "The doc-style skill: controlled technical English for documentation, with a checker and a hook."
+    }
+  ]
+}

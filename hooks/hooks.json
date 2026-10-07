@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$HOME/.local/share/haddock/hooks/check-markdown\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/check-markdown",
             "timeout": 30
           }
         ]

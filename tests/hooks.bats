@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# The PostToolUse hook in hooks/check-markdown and its configuration file. Each test
+# The PostToolUse hook in hooks/check-markdown and its plugin hooks file. Each test
 # writes a hook event as JSON to the hook's stdin, the way Claude Code does.
 
 setup() {
@@ -74,13 +74,13 @@ event() {
 	[ "$(jq -r '.systemMessage' <<<"$output")" = "stub finding" ]
 }
 
-@test "config: the hook file is valid JSON, matches PostToolUse, and runs check-markdown" {
-	jq -e '.hooks.PostToolUse[0].hooks[0] | .type == "command" and (.command | test("check-markdown"))' \
-		"$BATS_TEST_DIRNAME/../hooks/claude-code.json"
+@test "config: hooks.json runs check-markdown from the plugin root" {
+	jq -e '.hooks.PostToolUse[0].hooks[0] | .type == "command" and .command == "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/check-markdown"' \
+		"$BATS_TEST_DIRNAME/../hooks/hooks.json"
 }
 
 @test "config: the Claude Code matcher covers Edit and Write" {
-	matcher="$(jq -r '.hooks.PostToolUse[0].matcher' "$BATS_TEST_DIRNAME/../hooks/claude-code.json")"
+	matcher="$(jq -r '.hooks.PostToolUse[0].matcher' "$BATS_TEST_DIRNAME/../hooks/hooks.json")"
 	[[ Edit =~ ^($matcher)$ ]]
 	[[ Write =~ ^($matcher)$ ]]
 }

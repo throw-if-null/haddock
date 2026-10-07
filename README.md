@@ -18,6 +18,8 @@ Each layer has one job.
 | Skill | `skills/doc-style/` | Holds the full rules, the procedure, and the examples. This is the only place the rules are stated. |
 | Checker and hook | `skills/doc-style/scripts/check`, `hooks/` | Reports the constructions the rules exclude, on demand and after each edit. |
 
+`.claude-plugin/` holds the plugin manifest and the marketplace file.
+
 ## Requirements
 
 - Linux. The checker needs Bash 4 or later and GNU grep.
@@ -25,7 +27,24 @@ Each layer has one job.
 - For the tests: `bats-core` 1.7.0 or later, `shellcheck`, and `shfmt`. `mise install`
   installs the pinned versions from `mise.toml`.
 
-## Install the skill
+## Install as a plugin
+
+The repository is a Claude Code plugin and its own marketplace. Add the marketplace once,
+then install the plugin:
+
+```text
+/plugin marketplace add throw-if-null/haddock
+/plugin install haddock@throw-if-null
+```
+
+The plugin provides the skill and the hook. Claude Code loads the skill when a task
+matches its description, and `/haddock:doc-style` loads it on demand. The hook runs the
+checker after Claude Code edits a Markdown file, and needs `jq`.
+
+To try the plugin without installing it, start a session with
+`claude --plugin-dir /path/to/haddock`.
+
+## Install by hand
 
 Clone the repository, then link the skill into the directory Claude Code scans for
 personal skills:
@@ -35,8 +54,7 @@ git clone https://github.com/throw-if-null/haddock.git ~/.local/share/haddock
 ln -s ~/.local/share/haddock/skills/doc-style ~/.claude/skills/doc-style
 ```
 
-Claude Code loads the skill when a task matches its description, and `/doc-style` loads
-it on demand. `/skills` lists the loaded skills.
+`/doc-style` then loads the skill on demand, and `/skills` lists it.
 
 To install the skill for one project instead, link it into the project's
 `.claude/skills/` directory.
@@ -69,13 +87,16 @@ The exit status is 0 with no findings, 1 with findings, and 2 for a usage error,
 file, or an invalid suppression. The checker reports candidates, not errors. Rewrite each
 one, or keep it and state the reason.
 
-## Enable the hook
+## Enable the hook by hand
 
-The hook runs the checker after Claude Code edits a Markdown file. Claude reads the
-findings as additional context, and the transcript shows them to you.
+The plugin install enables the hook. After an install by hand, add it to
+`~/.claude/settings.json` yourself. The hook runs the checker after Claude Code edits a
+Markdown file. Claude reads the findings as additional context, and the transcript shows
+them to you.
 
-`hooks/claude-code.json` holds the hook in the shape of the `hooks` object in
-`~/.claude/settings.json`. Copy its `hooks` entry into your settings:
+`hooks/hooks.json` holds the hook in the shape of the `hooks` object in `settings.json`.
+Copy its `hooks` entry into your settings, with the clone path in place of
+`${CLAUDE_PLUGIN_ROOT}`:
 
 ```json
 {
@@ -96,7 +117,7 @@ findings as additional context, and the transcript shows them to you.
 }
 ```
 
-The path MUST point at your clone. The hook needs `jq`.
+The hook needs `jq`.
 
 ## Suppress a rule
 
@@ -127,15 +148,12 @@ its git repository. An unknown rule ID is an error.
 ## Tests
 
 ```bash
-tests/run      # the test suite
-tests/mutate   # breaks each checker rule in turn and confirms that a test fails
+tests/run                   # the test suite
+tests/mutate                # breaks each checker rule in turn and confirms that a test fails
+claude plugin validate .    # the plugin manifest and the marketplace file
 ```
 
 `tests/mutate` takes several minutes.
-
-## Planned
-
-- Packaging as a Claude Code plugin, so one install provides the skill and the hook.
 
 ## License
 
