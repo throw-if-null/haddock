@@ -31,7 +31,7 @@ Clone the repository, then link the skill into the directory Claude Code scans f
 personal skills:
 
 ```bash
-git clone https://github.com/MirzaMerdovic/haddock.git ~/.local/share/haddock
+git clone https://github.com/throw-if-null/haddock.git ~/.local/share/haddock
 ln -s ~/.local/share/haddock/skills/doc-style ~/.claude/skills/doc-style
 ```
 
