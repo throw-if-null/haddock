@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# An explicit shell runs each step with -e and -o pipefail. The default shell sets only -e.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check:
+    runs-on: ubuntu-${{ vars.UBUNTU_VERSION }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+      - name: shellcheck
+        run: shellcheck skills/doc-style/scripts/check hooks/check-markdown tests/run tests/mutate tests/test_helper.bash tests/*.bats
+      - name: shfmt
+        run: shfmt -d skills/doc-style/scripts/check hooks/check-markdown tests/run tests/mutate tests/test_helper.bash tests/*.bats
+      - name: Test suite
+        run: tests/run
+      - name: Check the repository Markdown
+        run: git ls-files '*.md' ':!tests/' | xargs skills/doc-style/scripts/check
+
+  mutate:
+    runs-on: ubuntu-${{ vars.UBUNTU_VERSION }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+      - name: Mutation check
+        run: tests/mutate
