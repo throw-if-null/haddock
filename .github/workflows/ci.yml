@@ -4,6 +4,11 @@ on:
   push:
   pull_request:
 
+# An explicit shell runs each step with -e and -o pipefail. The default shell sets only -e.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   check:
     runs-on: ubuntu-${{ vars.UBUNTU_VERSION }}
