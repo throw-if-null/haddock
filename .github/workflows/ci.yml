@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v4
+      - name: shellcheck
+        run: shellcheck skills/doc-style/scripts/check hooks/check-markdown tests/run tests/mutate tests/test_helper.bash tests/*.bats
+      - name: shfmt
+        run: shfmt -d skills/doc-style/scripts/check hooks/check-markdown tests/run tests/mutate tests/test_helper.bash tests/*.bats
+      - name: Test suite
+        run: tests/run
+      - name: Check the repository Markdown
+        run: git ls-files '*.md' ':!tests/' | xargs skills/doc-style/scripts/check
+
+  mutate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v4
+      - name: Mutation check
+        run: tests/mutate
