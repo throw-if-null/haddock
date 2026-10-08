@@ -32,6 +32,10 @@ const PATTERNS: &[(&str, &str)] = &[
         "tone",
         r"!\s*$|^[^#|>].*\?\s*$|\bcool\b|\bawesome\b|\bnice!",
     ),
+    (
+        "chain",
+        r"—|[[:space:]]--[[:space:]]|;[[:space:]]|, which\b",
+    ),
 ];
 
 /// The bit of the length rule.
