@@ -1,7 +1,9 @@
 name: CI
 
+# A pull request runs once, on the merge result. A push runs only on main, after a merge.
 on:
   push:
+    branches: [main]
   pull_request:
 
 # An explicit shell runs each step with -e and -o pipefail. The default shell sets only -e.

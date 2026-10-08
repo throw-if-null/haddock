@@ -1,8 +1,10 @@
 name: Mutate
 
 # The mutation check takes minutes, so it runs only when the checker or the tests change.
+# A pull request runs once, on the merge result. A push runs only on main, after a merge.
 on:
   push:
+    branches: [main]
     paths:
       - skills/doc-style/scripts/check
       - tests/**
