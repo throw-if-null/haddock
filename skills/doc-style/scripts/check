@@ -5,8 +5,9 @@
 # and state the reason. The script cannot judge context, and it cannot detect inconsistent
 # terminology, duplicated explanations, or a description written as a requirement.
 #
-# YAML front matter, fenced code blocks and inline code spans are removed before matching,
-# so identifiers and commands do not produce hits. Line numbers refer to the original file.
+# YAML front matter, fenced and indented code blocks, HTML comments other than suppression
+# directives, and inline code spans are removed before matching, so identifiers and
+# commands do not produce hits. Line numbers refer to the original file.
 #
 # The patterns assume Markdown. Running it on a source file also reports the file's own
 # syntax, so on a source file judge the hits inside comments and ignore the rest.
@@ -66,16 +67,61 @@ is_rule() {
 	[[ " ${RULES[*]} all " == *" $1 "* ]]
 }
 
-# Blank out front matter and fenced code blocks, and reduce every inline code span to CODE,
-# keeping one output line per input line so that grep -n reports the original line
-# numbers and a code span still counts as one word.
+# Blank out front matter, code blocks, and HTML comments other than directives, and reduce
+# every inline code span to CODE. The output has one line per input line, so that grep -n
+# reports the original line numbers, and a code span still counts as one word.
+#
+# A fence is three or more backticks or tildes. Only a line that holds the same character
+# at least as many times, and nothing else, closes it. An indented code block starts with
+# four spaces or a tab after a blank line. It ends at a line that is not blank and not
+# indented.
 strip_code() {
-	awk '
+	awk -v directive="$DIRECTIVE" '
+		# emit TEXT prints TEXT with inline code spans reduced to CODE and HTML comments
+		# removed. A comment without --> continues on the next line.
+		function emit(text,  i, j, rest) {
+			gsub(/`[^`]*`/, "CODE", text)
+			while ((i = index(text, "<!--"))) {
+				rest = substr(text, i + 4)
+				if (!(j = index(rest, "-->"))) {
+					text = substr(text, 1, i - 1)
+					comment = 1
+					break
+				}
+				text = substr(text, 1, i - 1) " " substr(rest, j + 3)
+			}
+			print text
+		}
+		BEGIN { blank = 1 }
+		{ after_blank = blank; blank = /^[[:space:]]*$/ }
 		NR == 1 && /^---[[:space:]]*$/ { front = 1; print ""; next }
 		front { if (/^---[[:space:]]*$/) front = 0; print ""; next }
-		/^[[:space:]]*```/ { fence = !fence; print ""; next }
-		fence { print ""; next }
-		{ gsub(/`[^`]*`/, "CODE"); print }
+		fence != "" {
+			if (/^[[:space:]]*(```+|~~~+)[[:space:]]*$/) {
+				mark = $0
+				gsub(/[[:space:]]/, "", mark)
+				if (substr(mark, 1, 1) == substr(fence, 1, 1) && length(mark) >= length(fence)) fence = ""
+			}
+			print ""
+			next
+		}
+		indented && (blank || /^(    |\t)/) { print ""; next }
+		{ indented = 0 }
+		comment {
+			if (!(i = index($0, "-->"))) { print ""; next }
+			comment = 0
+			emit(substr($0, i + 3))
+			next
+		}
+		match($0, /^[[:space:]]*(```+|~~~+)/) {
+			fence = substr($0, RSTART, RLENGTH)
+			gsub(/[[:space:]]/, "", fence)
+			print ""
+			next
+		}
+		after_blank && /^(    |\t)/ { indented = 1; print ""; next }
+		$0 ~ directive { print; next }
+		{ emit($0) }
 	' "$1"
 }
 

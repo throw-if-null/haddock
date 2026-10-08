@@ -12,6 +12,26 @@ setup() {
 	[ -z "$output" ]
 }
 
+@test "code: a tilde fence is code, and a backtick fence line does not close it" {
+	run -0 "$CHECK" code-tilde.md
+	[ -z "$output" ]
+}
+
+@test "code: a fence closes only at a fence line of the same length or longer, without an info string" {
+	run -0 "$CHECK" code-long-fence.md
+	[ -z "$output" ]
+}
+
+@test "code: a line indented by four spaces or a tab after a blank line is code" {
+	run -0 "$CHECK" code-indented.md
+	[ -z "$output" ]
+}
+
+@test "code: an HTML comment on one line or on several lines is not reported" {
+	run -0 "$CHECK" html-comment.md
+	[ -z "$output" ]
+}
+
 @test "length: sentences within the limit, a bold lead-in, and short list items are not reported" {
 	run -0 "$CHECK" length.md
 	[ -z "$output" ]

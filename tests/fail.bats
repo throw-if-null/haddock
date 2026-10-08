@@ -52,6 +52,11 @@ setup() {
 	assert_snapshot length-max-words.expected
 }
 
+@test "code: the text after a code block or an HTML comment is reported on its own line" {
+	run -1 "$CHECK" code-end.md
+	assert_snapshot code-end.expected
+}
+
 @test "suppress: a disable comment suppresses the listed rules until the enable comment" {
 	run -1 "$CHECK" suppress-inline.md
 	assert_snapshot suppress-inline.expected
