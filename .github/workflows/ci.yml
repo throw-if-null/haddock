@@ -13,6 +13,9 @@ defaults:
 jobs:
   check:
     runs-on: ubuntu-${{ vars.UBUNTU_VERSION || '24.04' }}
+    env:
+      # mise.ci.toml adds Claude Code, which only the plugin validation needs.
+      MISE_ENV: ci
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v5
@@ -24,6 +27,16 @@ jobs:
         run: tests/run
       - name: Check the repository Markdown
         run: git ls-files '*.md' ':!tests/' | xargs skills/doc-style/scripts/check
+      - name: Validate the plugin and the marketplace
+        # The one accepted warning: CLAUDE.md at the plugin root is for contributors, not
+        # plugin context.
+        run: |
+          claude plugin validate --json . > validate.json
+          jq -e '
+            .manifest.errors == [] and .manifest.warnings == []
+            and ([.contents[].errors[]] | length == 0)
+            and ([.contents[].warnings[] | select(.message | startswith("CLAUDE.md at the plugin root") | not)] | length == 0)
+          ' validate.json
 
   mutate:
     runs-on: ubuntu-${{ vars.UBUNTU_VERSION || '24.04' }}
