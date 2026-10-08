@@ -66,6 +66,8 @@ The checker cannot detect these. Verify each one before reporting the work compl
   need.
 - **Rhetorical framing.** Headings and openers describe content, not the reader's expected
   reaction.
+- **Articles.** Every sentence has its articles. A heading, a table cell, or a list label
+  may omit them.
 
 ## Source files
 

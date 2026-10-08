@@ -33,6 +33,8 @@ Apply these rules to text output, code discussions, architecture reviews, commit
   separate sentences.
 - Use active voice when it names the component that acts, or when it improves clarity.
 - Use a colon to introduce a list. Do not use an em dash.
+- Do not omit an article from a sentence. Write `the build copies the lock file`, not
+  `build copies lock file`. A heading, a table cell, or a list label MAY omit articles.
 
 ```text
 Before: The distinction has teeth in two places. `build.sh` derives the image tag from the
