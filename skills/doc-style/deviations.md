@@ -27,7 +27,7 @@ The STE column paraphrases the standard. It is not a quotation.
 | Use the active voice in procedures. Write an instruction as a command. | Use active voice when it names the component that acts. | Changed | A description of system behavior sometimes has no relevant actor, for example `The lock file is copied to the output directory`. Active voice is required when it identifies the component that acts. |
 | Write one topic per sentence. | State one fact, requirement, or instruction per sentence. | Adopted | |
 | Use a vertical list for a sequence of steps. | Use a list for independent requirements or steps. | Adopted | |
-| Do not omit articles (`a`, `the`). | No rule. | Not adopted | Under review for a later version. |
+| Do not omit articles (`a`, `the`). | Do not omit an article from a sentence. A heading, a table cell, or a list label MAY omit articles. | Changed | Headings, table cells, and labels in software documentation omit articles by convention. An article there adds length and no meaning. |
 | No equivalent. | Use MUST, MUST NOT, SHOULD, and MAY for requirements. | Added | Software specifications use the RFC 2119 keywords to state requirement strength. |
 | No equivalent. | Remove idioms, vague qualifiers, filler, anthropomorphism, and promotional words. | Added | STE excludes these words through its dictionary. These rules do not enforce the dictionary, so they name the excluded word classes, and the checker detects them. |
 | No equivalent. | Mark each statement as a fact, a requirement, an assumption, or a recommendation. | Added | A technical decision depends on which statements are verified and which are assumed. |
