@@ -16,12 +16,11 @@ Each layer has one job.
 | --- | --- | --- |
 | Primer | `snippets/CLAUDE.md` | Names the skill in a project's `CLAUDE.md`, so Claude loads it before it writes. |
 | Skill | `skills/doc-style/` | Holds the full rules, the procedure, and the examples. This is the only place the rules are stated. |
-| Checker and hook | `skills/doc-style/scripts/check`, `hooks/` | Reports the constructions the rules exclude, on demand and after each edit. |
+| Checker | `skills/doc-style/scripts/check` | Reports the constructions the rules exclude. |
 
 ## Requirements
 
 - Linux. The checker needs Bash 4 or later and GNU grep.
-- `jq`, for the hook.
 - For the tests: `bats-core` 1.7.0 or later, `shellcheck`, and `shfmt`. `mise install`
   installs the pinned versions from `mise.toml`.
 
@@ -69,35 +68,6 @@ The exit status is 0 with no findings, 1 with findings, and 2 for a usage error,
 file, or an invalid suppression. The checker reports candidates, not errors. Rewrite each
 one, or keep it and state the reason.
 
-## Enable the hook
-
-The hook runs the checker after Claude Code edits a Markdown file. Claude reads the
-findings as additional context, and the transcript shows them to you.
-
-`hooks/claude-code.json` holds the hook in the shape of the `hooks` object in
-`~/.claude/settings.json`. Copy its `hooks` entry into your settings:
-
-```json
-{
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$HOME/.local/share/haddock/hooks/check-markdown\"",
-            "timeout": 30
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-The path MUST point at your clone. The hook needs `jq`.
-
 ## Suppress a rule
 
 A rule ID is a label the checker prints: `idiom`, `qualifier`, `filler`, `anthropomorphism`,
@@ -135,7 +105,7 @@ tests/mutate   # breaks each checker rule in turn and confirms that a test fails
 
 ## Planned
 
-- Packaging as a Claude Code plugin, so one install provides the skill and the hook.
+- Packaging as a Claude Code plugin, so one install provides the skill.
 
 ## License
 
