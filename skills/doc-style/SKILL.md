@@ -74,11 +74,23 @@ The checker cannot detect these. Verify each one before reporting the work compl
 The checker reads a file that is not `.md` or `.markdown` as source code. `--comments`
 reads every file as source code. In source code, the checker checks only comment text:
 
-- A line that starts with `//`, `#`, `--`, or `;`. A comment after code on the same line
-  is not checked.
+- A line that starts with `//`, `#`, `--`, or `;`. A `#` line whose text starts with a C
+  preprocessor directive name is not a comment. The names are `include`, `define`,
+  `undef`, `if`, `ifdef`, `ifndef`, `elif`, `else`, `endif`, `pragma`, `error`, `warning`,
+  and `line`.
+- A `#` or `//` comment after code on the same line, when two conditions hold: whitespace
+  precedes the marker, and the `"` and `'` characters before it on the line are both even
+  in number. A marker inside a string literal does not start a comment.
 - A block between `/*` and `*/`. A `/*` opens a block only at the start of a line or after
   whitespace. A path glob such as `src/*.go` does not open a block.
-- A block between `"""` and `"""`.
+- A block between `"""` and `"""`, or between `'''` and `'''`.
+- A block between `<!--` and `-->`, in HTML, XML, Vue, Svelte, and any other file that
+  uses it.
+- A block between `--[[` and `]]`, in Lua. A `--[[` at the start of a line opens a block,
+  and does not start a `--` line comment.
+
+<!-- A shell continuation line that starts with --, such as a wrapped command's --flag, is
+read as a comment. -->
 
 Inline code spans in a comment are removed before matching. The `tone` rule does not apply
 to a line that starts with `TODO`, `FIXME`, `XXX`, or `NOTE`. A trailing `?` is not

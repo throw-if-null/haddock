@@ -10,11 +10,17 @@
 # than suppression directives. Identifiers and commands then produce no hits.
 #
 # Any other file is read as source code, and only its comment text is checked. A comment
-# is a line that starts with //, #, --, or ;, or a block between /* and */ or between """
-# and """. A /* opens a block only at the start of a line or after whitespace. Inline code
-# spans in a comment are removed. In source code, the tone rule does not apply to a line
-# that starts with TODO, FIXME, XXX, or NOTE, and a trailing ? is not reported.
-# --comments reads every file as source code.
+# is a line that starts with //, #, --, or ;, or a block between an opener and a closer.
+# The block forms are /* and */, """ and """, ''' and ''', <!-- and -->, and --[[ and ]].
+# A --[[ at the start of a line opens a block, and does not start a line comment.
+# A # or // after code on the same line starts a comment when two conditions
+# hold: whitespace precedes the marker, and the " and ' characters before it on the line
+# are both even in number. A marker inside a string literal is then not a comment start.
+# A # line whose text starts with a C preprocessor directive name, such as include or
+# define, is a directive and is not checked. A /* opens a block only at the start of a
+# line or after whitespace. Inline code spans in a comment are removed. In source code,
+# the tone rule does not apply to a line that starts with TODO, FIXME, XXX, or NOTE, and
+# a trailing ? is not reported. --comments reads every file as source code.
 #
 # Line numbers refer to the original file.
 #
@@ -69,7 +75,8 @@ done
 RULES+=(length)
 
 # A line that starts with this extended regular expression is a suppression directive.
-DIRECTIVE='^[[:space:]]*<!--[[:space:]]*doc-style-'
+# The opener is split, so that a check of this script does not read a block here.
+DIRECTIVE='^[[:space:]]*<!''--[[:space:]]*doc-style-'
 
 # is_rule ID succeeds when ID is a rule ID or all.
 is_rule() {
@@ -97,16 +104,60 @@ strip_code() {
 				if (block == "*/") sub(/^[[:space:]]*\*+/, "", text)
 				out = out " " text
 			}
+			# trailing LINE returns the position in LINE of the first # or // that starts a
+			# comment after code, or 0. Whitespace precedes the marker, and the double quote
+			# and single quote characters before it on the whole line are both even in
+			# number. A marker inside a string literal is then not a comment start.
+			function trailing(line,  s, pos, abs, before) {
+				s = line
+				pos = 0
+				while (match(s, /#|\/\//)) {
+					pos += RSTART
+					s = substr(s, RSTART + 1)
+					abs = length($0) - length(line) + pos
+					if (substr($0, abs - 1, 1) !~ /[[:space:]]/) continue
+					before = substr($0, 1, abs - 1)
+					if (odd(before, dq) || odd(before, sq)) continue
+					return pos
+				}
+				return 0
+			}
+			# odd TEXT CH returns 1 when TEXT holds an odd number of CH.
+			function odd(text, ch) {
+				return gsub(ch, "", text) % 2
+			}
 			BEGIN {
 				line_comment = "^[[:space:]]*(//+|#+|--+|;+)"
+				# A Lua long comment opener at the start of a line. It is not a line comment.
+				long_comment = "^[[:space:]]*--\\[\\["
 				# Escaped, so that a check of this script does not read a block here.
 				quotes = "\"\"\""
+				dq = "\""
+				# The single quote, as an octal escape, because the awk program is a
+				# single-quoted shell string.
+				sq = "\047"
+				squotes = sq sq sq
+				# Split, so that a check of this script does not read a block here.
+				html = "<!" "--"
+				html_end = "--" ">"
+				lua = "--" "[["
+				lua_end = "]]"
+				# The length of the opener for each closer.
+				open_len[quotes] = 3
+				open_len[squotes] = 3
+				open_len[html_end] = 4
+				open_len[lua_end] = 4
+				open_len["*/"] = 2
+				preprocessor = "^[[:space:]]*(include|define|undef|if|ifdef|ifndef|elif|else|endif|pragma|error|warning|line)([^[:alnum:]_]|$)"
 			}
 			{
 				line = $0
 				out = ""
-				if (block == "" && match(line, line_comment)) {
+				if (block == "" && line !~ long_comment && match(line, line_comment)) {
 					out = substr(line, RSTART + RLENGTH)
+					# A # line whose text starts with a C preprocessor directive name is a
+					# directive, not a comment.
+					if (substr(line, RSTART, RLENGTH) ~ /#$/ && out ~ preprocessor) out = ""
 					line = ""
 				}
 				while (line != "") {
@@ -122,6 +173,9 @@ strip_code() {
 					}
 					p = 0
 					if ((i = index(line, quotes))) { p = i; kind = quotes }
+					if ((i = index(line, squotes)) && (!p || i < p)) { p = i; kind = squotes }
+					if ((i = index(line, html)) && (!p || i < p)) { p = i; kind = html_end }
+					if ((i = index(line, lua)) && (!p || i < p)) { p = i; kind = lua_end }
 					s = line
 					off = 0
 					while ((j = index(s, "/*"))) {
@@ -133,8 +187,15 @@ strip_code() {
 						off += j + 1
 						s = substr(line, off + 1)
 					}
+					t = trailing(line)
+					if (t && (!p || t < p)) {
+						text = substr(line, t)
+						sub(/^(#+|\/\/+)/, "", text)
+						out = out " " text
+						break
+					}
 					if (!p) break
-					line = substr(line, p + (kind == "*/" ? 2 : 3))
+					line = substr(line, p + open_len[kind])
 					block = kind
 				}
 				gsub(/`[^`]*`/, "CODE", out)
@@ -145,10 +206,11 @@ strip_code() {
 	fi
 	awk -v directive="$DIRECTIVE" '
 		# emit TEXT prints TEXT with inline code spans reduced to CODE and HTML comments
-		# removed. A comment without --> continues on the next line.
+		# removed. A comment without --> continues on the next line. The opener is split,
+		# so that a check of this script does not read a block here.
 		function emit(text,  i, j, rest) {
 			gsub(/`[^`]*`/, "CODE", text)
-			while ((i = index(text, "<!--"))) {
+			while ((i = index(text, "<!" "--"))) {
 				rest = substr(text, i + 4)
 				if (!(j = index(rest, "-->"))) {
 					text = substr(text, 1, i - 1)
@@ -259,7 +321,8 @@ inline_regions() {
 		$0 ~ directive {
 			text = $0
 			if (!sub(/[[:space:]]*-->[[:space:]]*$/, "", text)) { printf "%s:%d: directive does not end with -->\n", file, NR > "/dev/stderr"; bad = 1; next }
-			sub(/^[[:space:]]*<!--[[:space:]]*/, "", text)
+			# The opener is split, so that a check of this script does not read a block here.
+			sub("^[[:space:]]*<!" "--[[:space:]]*", "", text)
 			n = split(text, word, /[[:space:]]+/)
 			if (word[1] != "doc-style-disable" && word[1] != "doc-style-enable") { printf "%s:%d: unknown directive: %s\n", file, NR, word[1] > "/dev/stderr"; bad = 1; next }
 			split("", ids)

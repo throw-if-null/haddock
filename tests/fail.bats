@@ -72,6 +72,36 @@ setup() {
 	assert_snapshot comments.sh.expected
 }
 
+@test "source code: findings in C line comments and block comments are reported, and a directive is not" {
+	run -1 "$CHECK" comments.c
+	assert_snapshot comments.c.expected
+}
+
+@test "source code: a # comment after code is checked, and the string before it is not" {
+	run -1 "$CHECK" comments-trailing.py
+	assert_snapshot comments-trailing.py.expected
+}
+
+@test "source code: a // comment after code is checked" {
+	run -1 "$CHECK" comments-trailing.go
+	assert_snapshot comments-trailing.go.expected
+}
+
+@test "source code: an HTML comment block is checked" {
+	run -1 "$CHECK" comments.html
+	assert_snapshot comments.html.expected
+}
+
+@test "source code: a Lua long comment is checked, and it takes precedence over a line comment" {
+	run -1 "$CHECK" comments.lua
+	assert_snapshot comments.lua.expected
+}
+
+@test "source code: a single-quoted docstring is checked" {
+	run -1 "$CHECK" comments-single-quote.py
+	assert_snapshot comments-single-quote.py.expected
+}
+
 @test "source code: a line that starts with -- is a comment" {
 	run -1 "$CHECK" comments.sql
 	assert_snapshot comments.sql.expected

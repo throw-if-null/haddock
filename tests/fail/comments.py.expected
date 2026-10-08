@@ -1,4 +1,5 @@
 comments.py:4: [idiom] load-bearing | # The retry limit is load-bearing.
+comments.py:5: [idiom] load-bearing | LIMIT = "load-bearing"  # A comment after code is ch
 comments.py:9: [qualifier] just | """Return the limit. The value is just an integer.""
 comments.py:16: [anthropomorphism] talks to | The worker talks to the queue.
 comments.py:19: [length] 28-word sentence: The worker reads the limit from the environment, convert...

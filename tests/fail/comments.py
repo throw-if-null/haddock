@@ -2,7 +2,7 @@
 import os
 
 # The retry limit is load-bearing.
-LIMIT = "load-bearing"  # A comment after code is not checked: load-bearing.
+LIMIT = "load-bearing"  # A comment after code is checked: load-bearing.
 
 
 def read_limit():
