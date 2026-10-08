@@ -7,7 +7,7 @@ or edit prose.
 ## Verification
 
 - Run `tests/run` after a change to the checker, the tests, or the snippets.
-- Run `tests/mutate` after a change to a checker rule. It takes several minutes.
+- Run `tests/mutate` after a change to a checker rule.
 - Run `shellcheck` and `shfmt -d` on every changed shell script and `.bats` file.
 - Run `skills/doc-style/scripts/check` on every changed Markdown file.
 

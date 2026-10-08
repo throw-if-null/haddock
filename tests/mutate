@@ -8,15 +8,31 @@
 #
 # tests/run MUST fail for every mutant. A mutant that passes is a rule without a test.
 #
+# The script writes every mutant to its own directory first, then runs the suite for all
+# of them in parallel, then reports the verdicts in order. MUTATE_JOBS sets the number of
+# parallel runs. The default is the number of processors. --verbose prints one line per
+# mutant as its verdict lands.
+#
 # Exit status: 0 every mutant detected, 1 at least one mutant not detected, 2 tests/run
-# fails on the unmodified checker.
+# fails on the unmodified checker, or a usage error.
 set -euo pipefail
+
+verbose=0
+for arg in "$@"; do
+	case "$arg" in
+	--verbose) verbose=1 ;;
+	*)
+		echo "usage: ${0##*/} [--verbose]" >&2
+		exit 2
+		;;
+	esac
+done
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 check="$root/skills/doc-style/scripts/check"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
-mutant="$work/check"
+jobs="${MUTATE_JOBS:-$(nproc)}"
 
 # Each entry is a name, a tab, and one sed expression applied to the checker.
 BEHAVIOR_MUTANTS=(
@@ -147,41 +163,69 @@ if ! "$root/tests/run" >/dev/null 2>&1; then
 	exit 2
 fi
 
-detected=0
-undetected=0
-
-# try NAME runs the suite against the mutant and records the result.
-try() {
-	if cmp -s "$check" "$mutant"; then
-		undetected=$((undetected + 1))
-		echo "NOT APPLIED: $1"
-		return
+# Each mutant gets a numbered directory that holds its name, its checker, and later its
+# verdict. add_mutant NAME moves the checker in $stage into the next directory and sets
+# dir to it. A mutant that is identical to the checker gets its verdict here and does
+# not run.
+stage="$work/stage"
+count=0
+dir=""
+add_mutant() {
+	count=$((count + 1))
+	dir="$work/$(printf '%04d' "$count")"
+	mkdir "$dir"
+	printf '%s\n' "$1" >"$dir/name"
+	mv "$stage" "$dir/check"
+	chmod +x "$dir/check"
+	if cmp -s "$check" "$dir/check"; then
+		echo "NOT APPLIED" >"$dir/verdict"
 	fi
-	chmod +x "$mutant"
-	if CHECK="$mutant" "$root/tests/run" >/dev/null 2>&1; then
-		undetected=$((undetected + 1))
-		echo "NOT DETECTED: $1"
-		return
-	fi
-	detected=$((detected + 1))
 }
 
+# A regex that grep rejects after the removal is a mutant that cannot run.
 while IFS=$'\t' read -r label index text; do
-	awk -v label="$label" -v drop="$index" "$patterns_awk" "$check" >"$mutant"
-	regex="$(grep -P "^\t\"$label\t" "$mutant" | cut -f2 | sed 's/"$//')"
+	awk -v label="$label" -v drop="$index" "$patterns_awk" "$check" >"$stage"
+	add_mutant "[$label] without $text"
+	regex="$(grep -P "^\t\"$label\t" "$dir/check" | cut -f2 | sed 's/"$//')"
 	status=0
 	grep -E -i -- "$regex" /dev/null || status=$?
 	if ((status == 2)); then
-		undetected=$((undetected + 1))
-		echo "INVALID: [$label] without $text: $regex"
-		continue
+		echo "INVALID: $regex" >"$dir/verdict"
 	fi
-	try "[$label] without $text"
 done < <(awk -v drop= "$patterns_awk" "$check")
 
 for entry in "${BEHAVIOR_MUTANTS[@]}"; do
-	sed -e "${entry#*	}" "$check" >"$mutant"
-	try "${entry%%	*}"
+	sed -e "${entry#*	}" "$check" >"$stage"
+	add_mutant "${entry%%	*}"
+done
+
+echo "$count mutants, $jobs jobs"
+
+# Run the suite for every mutant without a verdict. Each run has its own checker and
+# its own bats temporary directory, so the runs do not interfere.
+# shellcheck disable=SC2016 # The variables belong to the inner shell.
+find "$work" -mindepth 1 -maxdepth 1 -type d '!' -exec test -e '{}/verdict' ';' -print0 |
+	xargs -0 -P "$jobs" -I '{}' bash -c '
+		if CHECK="$1/check" "$2" >/dev/null 2>&1; then
+			echo "NOT DETECTED" >"$1/verdict"
+		else
+			echo "DETECTED" >"$1/verdict"
+		fi
+		if (($3)); then
+			echo "$(tr "[:upper:]" "[:lower:]" <"$1/verdict"): $(cat "$1/name")"
+		fi
+	' _ '{}' "$root/tests/run" "$verbose"
+
+detected=0
+undetected=0
+for dir in "$work"/*/; do
+	verdict="$(cat "$dir/verdict")"
+	if [ "$verdict" = DETECTED ]; then
+		detected=$((detected + 1))
+		continue
+	fi
+	undetected=$((undetected + 1))
+	echo "$verdict: $(cat "$dir/name")"
 done
 
 echo "$detected detected, $undetected not detected"

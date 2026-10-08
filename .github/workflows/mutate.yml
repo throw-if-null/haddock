@@ -1,0 +1,36 @@
+name: Mutate
+
+# The mutation check takes minutes, so it runs only when the checker or the tests change.
+# A pull request runs once, on the merge result. A push runs only on main, after a merge.
+on:
+  push:
+    branches: [main]
+    paths:
+      - skills/doc-style/scripts/check
+      - tests/**
+      - mise.toml
+      - mise.lock
+      - .github/workflows/mutate.yml
+  pull_request:
+    paths:
+      - skills/doc-style/scripts/check
+      - tests/**
+      - mise.toml
+      - mise.lock
+      - .github/workflows/mutate.yml
+
+# An explicit shell runs each step with -e and -o pipefail. The default shell sets only -e.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  mutate:
+    runs-on: ubuntu-${{ vars.UBUNTU_VERSION }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+      - name: Install the pinned tools
+        uses: jdx/mise-action@v5
+      - name: Mutation check
+        run: tests/mutate --verbose
