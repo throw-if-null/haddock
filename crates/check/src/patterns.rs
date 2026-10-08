@@ -24,6 +24,10 @@ const PATTERNS: &[(&str, &str)] = &[
         "anthropomorphism",
         r"\btalks? to\b|\bknows about\b|\bis smart enough\b|\bmagically\b|\bdecides to\b|\bis happy\b|\bcomplains\b|\bcares about\b|\bis aware of\b|\bdoesn't like\b|\bwants to know\b",
     ),
+    (
+        "hype",
+        r"\bleverage|\butilize|\bseamless|\brobust\b|\bpowerful\b|\bcutting.edge\b|\bstate of the art\b|\bgame.chang|\bbest.in.class\b|\bblazing|\beffortless|\brich set of\b|\belegant\b|\bdelightful\b|\bcomprehensive\b",
+    ),
 ];
 
 /// The bit of the length rule.
