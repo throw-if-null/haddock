@@ -7,10 +7,16 @@ use std::sync::LazyLock;
 
 /// Each entry is a rule ID and one case-insensitive regular expression. Each expression is
 /// the `PATTERNS` entry of the bash checker, unchanged.
-const PATTERNS: &[(&str, &str)] = &[(
-    "idiom",
-    r"\bload.bearing\b|\bbelt and braces\b|\bhas teeth\b|\bnot decoration\b|\blearned the hard way\b|\bthat (is|was) the point\b|\bthat's the point\b|\bblast radius\b|\bunder the hood\b|\bout of the box\b|\bsilver bullets?\b|\blow.hanging fruit\b|\brabbit holes?\b|\bfirst.class citizens?\b|\bheavy lifting\b|\bbattle.tested\b|\bbulletproof\b|\bmoving parts\b|\bat the end of the day\b|\bin the wild\b|\bboils down to\b|\bthe trick is\b|\brule of thumb\b|\bbells and whistles\b|\bfootguns?\b|\bgotchas?\b|\bhappy paths?\b|\bglue code\b|\bsanity checks?\b|\bmagic\b|\bhand.wav|\bdeep dives?\b|\bbaked in\b|\btable stakes\b|\bpaper over\b|\bband.aids?\b|\bmove the needle\b|\bnail down\b|\bswiss army\b|\bapples to apples\b|\bthe name of the game\b",
-)];
+const PATTERNS: &[(&str, &str)] = &[
+    (
+        "idiom",
+        r"\bload.bearing\b|\bbelt and braces\b|\bhas teeth\b|\bnot decoration\b|\blearned the hard way\b|\bthat (is|was) the point\b|\bthat's the point\b|\bblast radius\b|\bunder the hood\b|\bout of the box\b|\bsilver bullets?\b|\blow.hanging fruit\b|\brabbit holes?\b|\bfirst.class citizens?\b|\bheavy lifting\b|\bbattle.tested\b|\bbulletproof\b|\bmoving parts\b|\bat the end of the day\b|\bin the wild\b|\bboils down to\b|\bthe trick is\b|\brule of thumb\b|\bbells and whistles\b|\bfootguns?\b|\bgotchas?\b|\bhappy paths?\b|\bglue code\b|\bsanity checks?\b|\bmagic\b|\bhand.wav|\bdeep dives?\b|\bbaked in\b|\btable stakes\b|\bpaper over\b|\bband.aids?\b|\bmove the needle\b|\bnail down\b|\bswiss army\b|\bapples to apples\b|\bthe name of the game\b",
+    ),
+    (
+        "qualifier",
+        r"\bjust\b|\bsimply\b|\bbasically\b|\bobviously\b|\bof course\b|\bactually\b|\bfairly\b|\bquite\b|\bpretty much\b|\ba bit\b|\bsomewhat\b|\bvery\b|\breally\b|\bmore or less\b|\bnicely\b|\beasily\b|\bworth (doing|knowing|the)\b|\bideally\b|\bhopefully\b|\bprobably\b|\bmostly\b|\bvarious\b|\bin general\b|\bgenerally speaking\b|\bsimple enough\b",
+    ),
+];
 
 /// The bit of the length rule.
 pub const LENGTH: u16 = 1 << PATTERNS.len();
