@@ -9,9 +9,10 @@ defaults:
   run:
     shell: bash
 
+# A fork does not have the UBUNTU_VERSION repository variable. runs-on then uses 24.04.
 jobs:
   check:
-    runs-on: ubuntu-${{ vars.UBUNTU_VERSION }}
+    runs-on: ubuntu-${{ vars.UBUNTU_VERSION || '24.04' }}
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v5
@@ -25,7 +26,7 @@ jobs:
         run: git ls-files '*.md' ':!tests/' | xargs skills/doc-style/scripts/check
 
   mutate:
-    runs-on: ubuntu-${{ vars.UBUNTU_VERSION }}
+    runs-on: ubuntu-${{ vars.UBUNTU_VERSION || '24.04' }}
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v5
