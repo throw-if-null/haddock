@@ -1,12 +1,14 @@
 # haddock
 
 Claude Code skills for technical writing. The first skill, `doc-style`, writes and checks
-documentation in controlled technical English.
+documentation in controlled technical English. Its goal is documentation and code
+comments that are literal, short, and easy for a human to understand.
 
-The rules are based on ASD-STE100, Simplified Technical English. They are opinionated by
-design: they fix one sentence length, one set of requirement keywords, and one word for
-each concept. [deviations.md](skills/doc-style/deviations.md) lists where the rules differ
-from the standard, and why.
+The rules are inspired by ASD-STE100, Simplified Technical English. They are not an
+implementation of the standard. They are opinionated by design: they fix one sentence
+length, one set of requirement keywords, and one word for each concept.
+[deviations.md](skills/doc-style/deviations.md) lists where the rules differ from the
+standard, and why.
 
 ## Three layers
 
@@ -15,7 +17,7 @@ Each layer has one job.
 | Layer | Files | Job |
 | --- | --- | --- |
 | Primer | `snippets/CLAUDE.md` | Names the skill in a project's `CLAUDE.md`, so Claude loads it before it writes. |
-| Skill | `skills/doc-style/` | Holds the full rules, the procedure, and the examples. This is the only place the rules are stated. |
+| Skill | `skills/doc-style/` | Holds the full rules, the procedure, and the examples. This is the only place the full rules are stated. |
 | Checker | `skills/doc-style/scripts/check` | Reports the constructions the rules exclude. |
 
 ## Requirements
@@ -48,8 +50,7 @@ Append `snippets/CLAUDE.md` to the `CLAUDE.md` of each project that uses the ski
 cat ~/.local/share/haddock/snippets/CLAUDE.md >> CLAUDE.md
 ```
 
-The primer names the skill, summarizes the rules, and tells Claude to run the checker. It
-does not restate the rules.
+The primer names the skill, summarizes the rules, and tells Claude to run the checker.
 
 ## Run the checker
 
