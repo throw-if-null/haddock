@@ -32,6 +32,11 @@ setup() {
 	[ -z "$output" ]
 }
 
+@test "compound: a pattern inside a hyphenated compound is not reported" {
+	run -0 "$CHECK" compound.md
+	[ -z "$output" ]
+}
+
 @test "suppress: a region without an enable comment suppresses every finding to the end of the file" {
 	run -0 "$CHECK" suppress-region.md
 	[ -z "$output" ]

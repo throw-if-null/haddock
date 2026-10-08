@@ -23,6 +23,8 @@ BEHAVIOR_MUTANTS=(
 	"front matter not removed	/NR == 1 \&\& \/^---/d"
 	"fenced code not removed	/fence = !fence/d"
 	"inline code not removed	s/gsub(\/\`\[^\`\]\*\`\/, \"CODE\"); //"
+	"hyphen does not join a compound	s/^\tjoined=.*/\tjoined=\"\$stripped\"/"
+	"match shows _ in place of -	/match=\"\${match\/\/_\/-}\"/d"
 	"proper noun not excluded	/proper_noun \"\$match\" \"\$snippet\" \&\& continue/d"
 	"sentence cut ignores closing emphasis	s/\[\.!?:\]\[\*\`\")\\\\\]\]\*/[.!?:]/"
 	"list marker does not start a paragraph	/\[0-9\]+\[\.)\]/s|/^|/^NEVER|"

@@ -1,4 +1,4 @@
-<!-- Rule: replace promotional words with use, or with the measurable property. Each item uses one entry from the checker's hype list. -->
+<!-- Rule: replace promotional words with use, or with the measurable property. Each item uses one entry from the checker's hype list. The last five items use an inflected form. -->
 
 - leverage
 - utilize
@@ -15,3 +15,8 @@
 - elegant
 - delightful
 - comprehensive
+- leveraged
+- utilized
+- seamlessly
+- blazingly
+- effortlessly

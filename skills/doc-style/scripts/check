@@ -40,11 +40,11 @@ usage() {
 
 # Each entry is a label, a tab, and one case-insensitive extended regular expression.
 PATTERNS=(
-	"idiom	load.bearing|belt and braces|has teeth|not decoration|learned the hard way|that (is|was) the point|that's the point|blast radius|under the hood|out of the box|silver bullet|low.hanging fruit|rabbit hole|first.class citizen|heavy lifting|battle.tested|bulletproof|moving parts|at the end of the day|in the wild|boils down to|the trick is|rule of thumb|bells and whistles|footgun|gotcha|happy path|glue code|sanity check|magic|hand.wav|deep dive|baked in|table stakes|paper over|band.aid|move the needle|nail down|swiss army|apples to apples|the name of the game"
-	"qualifier	\bjust\b|\bsimply\b|\bbasically\b|\bobviously\b|of course|\bactually\b|\bfairly\b|\bquite\b|pretty much|\ba bit\b|\bsomewhat\b|\bvery\b|\breally\b|more or less|\bnicely\b|\beasily\b|worth (doing|knowing|the)|\bideally\b|\bhopefully\b|\bprobably\b|\bmostly\b|\bvarious\b|in general|generally speaking|\bsimple enough\b"
-	"filler	note that|worth noting|keep in mind|bear in mind|as you can see|\blet's\b|\blet us\b|we'll|we will now|you'll want|feel free|don't worry|remember that|please note|that said|to be honest|as mentioned (above|earlier)"
-	"anthropomorphism	talks? to|knows about|is smart enough|magically|decides to|is happy|complains|cares about|is aware of|doesn't like|wants to know"
-	"hype	\bleverage|\butilize|seamless|\brobust\b|\bpowerful\b|cutting.edge|state of the art|game.chang|best.in.class|\bblazing|effortless|rich set of|\belegant\b|\bdelightful\b|\bcomprehensive\b"
+	"idiom	\bload.bearing\b|\bbelt and braces\b|\bhas teeth\b|\bnot decoration\b|\blearned the hard way\b|\bthat (is|was) the point\b|\bthat's the point\b|\bblast radius\b|\bunder the hood\b|\bout of the box\b|\bsilver bullets?\b|\blow.hanging fruit\b|\brabbit holes?\b|\bfirst.class citizens?\b|\bheavy lifting\b|\bbattle.tested\b|\bbulletproof\b|\bmoving parts\b|\bat the end of the day\b|\bin the wild\b|\bboils down to\b|\bthe trick is\b|\brule of thumb\b|\bbells and whistles\b|\bfootguns?\b|\bgotchas?\b|\bhappy paths?\b|\bglue code\b|\bsanity checks?\b|\bmagic\b|\bhand.wav|\bdeep dives?\b|\bbaked in\b|\btable stakes\b|\bpaper over\b|\bband.aids?\b|\bmove the needle\b|\bnail down\b|\bswiss army\b|\bapples to apples\b|\bthe name of the game\b"
+	"qualifier	\bjust\b|\bsimply\b|\bbasically\b|\bobviously\b|\bof course\b|\bactually\b|\bfairly\b|\bquite\b|\bpretty much\b|\ba bit\b|\bsomewhat\b|\bvery\b|\breally\b|\bmore or less\b|\bnicely\b|\beasily\b|\bworth (doing|knowing|the)\b|\bideally\b|\bhopefully\b|\bprobably\b|\bmostly\b|\bvarious\b|\bin general\b|\bgenerally speaking\b|\bsimple enough\b"
+	"filler	\bnote that\b|\bworth noting\b|\bkeep in mind\b|\bbear in mind\b|\bas you can see\b|\blet's\b|\blet us\b|\bwe'll\b|\bwe will now\b|\byou'll want\b|\bfeel free\b|\bdon't worry\b|\bremember that\b|\bplease note\b|\bthat said\b|\bto be honest\b|\bas mentioned (above|earlier)\b"
+	"anthropomorphism	\btalks? to\b|\bknows about\b|\bis smart enough\b|\bmagically\b|\bdecides to\b|\bis happy\b|\bcomplains\b|\bcares about\b|\bis aware of\b|\bdoesn't like\b|\bwants to know\b"
+	"hype	\bleverage|\butilize|\bseamless|\brobust\b|\bpowerful\b|\bcutting.edge\b|\bstate of the art\b|\bgame.chang|\bbest.in.class\b|\bblazing|\beffortless|\brich set of\b|\belegant\b|\bdelightful\b|\bcomprehensive\b"
 	"tone	!\s*$|^[^#|>].*\?\s*$|\bcool\b|\bawesome\b|\bnice!"
 	"chain	—|[[:space:]]--[[:space:]]|;[[:space:]]|, which\b"
 )
@@ -231,7 +231,7 @@ suppressed() {
 }
 
 scan_file() {
-	local file="$1" stripped entry label regex hits line match snippet config config_off="" regions rules finding
+	local file="$1" stripped joined entry label regex hits line match snippet config config_off="" regions rules finding
 	local -a src
 	local -A line_off=()
 	if [ ! -f "$file" ]; then
@@ -250,14 +250,20 @@ scan_file() {
 	done <<<"$regions"
 	# A directive line matches no pattern and ends the paragraph before it.
 	stripped="$(sed -E "s/${DIRECTIVE}.*//" <<<"$stripped")"
+	# A hyphen between two letters or digits joins a compound word. The patterns match a
+	# copy of the text in which each such hyphen is _, a word character, so that \b does
+	# not match inside a compound: \bmagic\b does not match magic-free. A reported match
+	# shows each _ as -.
+	joined="$(sed -E -e ':a' -e 's/([[:alnum:]])-([[:alnum:]])/\1_\2/g' -e 'ta' <<<"$stripped")"
 	{
 		for entry in "${PATTERNS[@]}"; do
 			label="${entry%%	*}"
 			regex="${entry#*	}"
-			hits="$(printf '%s\n' "$stripped" | grep -n -i -o -E -- "$regex" || true)"
+			hits="$(printf '%s\n' "$joined" | grep -n -i -o -E -- "$regex" || true)"
 			[ -n "$hits" ] || continue
 			while IFS=: read -r line match; do
 				[ -n "$line" ] || continue
+				match="${match//_/-}"
 				snippet="${src[line - 1]}"
 				proper_noun "$match" "$snippet" && continue
 				suppressed "$label" "$line" && continue
