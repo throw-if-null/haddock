@@ -47,6 +47,11 @@ setup() {
 	[ -z "$output" ]
 }
 
+@test "source code: a shell continuation line that starts with -- is read as a comment" {
+	run -0 "$CHECK" continuation.sh
+	[ -z "$output" ]
+}
+
 @test "source code: a C preprocessor directive is not a comment" {
 	run -0 "$CHECK" preprocessor.c
 	[ -z "$output" ]

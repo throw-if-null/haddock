@@ -89,6 +89,9 @@ reads every file as source code. In source code, the checker checks only comment
 - A block between `--[[` and `]]`, in Lua. A `--[[` at the start of a line opens a block,
   and does not start a `--` line comment.
 
+<!-- A shell continuation line that starts with --, such as a wrapped command's --flag, is
+read as a comment. -->
+
 Inline code spans in a comment are removed before matching. The `tone` rule does not apply
 to a line that starts with `TODO`, `FIXME`, `XXX`, or `NOTE`. A trailing `?` is not
 reported.
