@@ -72,6 +72,11 @@ setup() {
 	assert_snapshot comments.sh.expected
 }
 
+@test "source code: findings in C line comments and block comments are reported, and a directive is not" {
+	run -1 "$CHECK" comments.c
+	assert_snapshot comments.c.expected
+}
+
 @test "source code: a # comment after code is checked, and the string before it is not" {
 	run -1 "$CHECK" comments-trailing.py
 	assert_snapshot comments-trailing.py.expected

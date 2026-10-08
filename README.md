@@ -97,9 +97,11 @@ The checker reads a `.md` or `.markdown` file as Markdown. It reads any other fi
 source code, and checks only the comments: lines that start with `//`, `#`, `--`, or `;`,
 and blocks between `/*` and `*/` or between `"""` and `"""`. A `#` or `//` comment after
 code is checked when two conditions hold: whitespace precedes the marker, and the `"` and
-`'` characters before it on the line are both even in number. `--comments` reads every
-file as source code. In source code, the `tone` rule does not apply to a line that starts
-with `TODO`, `FIXME`, `XXX`, or `NOTE`. A trailing `?` is not reported.
+`'` characters before it on the line are both even in number. A `#` line whose text starts
+with a C preprocessor directive name, such as `include` or `define`, is not a comment.
+`--comments` reads every file as source code. In source code, the `tone` rule does not
+apply to a line that starts with `TODO`, `FIXME`, `XXX`, or `NOTE`. A trailing `?` is not
+reported.
 
 ```bash
 ~/.local/share/haddock/skills/doc-style/scripts/check src/worker.py

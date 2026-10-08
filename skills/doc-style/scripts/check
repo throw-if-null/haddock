@@ -14,10 +14,11 @@
 # and """. A # or // after code on the same line starts a comment when two conditions
 # hold: whitespace precedes the marker, and the " and ' characters before it on the line
 # are both even in number. A marker inside a string literal is then not a comment start.
-# A /* opens a block only at the start of a line or after whitespace. Inline code spans
-# in a comment are removed. In source code, the tone rule does not apply to a line that
-# starts with TODO, FIXME, XXX, or NOTE, and a trailing ? is not reported. --comments
-# reads every file as source code.
+# A # line whose text starts with a C preprocessor directive name, such as include or
+# define, is a directive and is not checked. A /* opens a block only at the start of a
+# line or after whitespace. Inline code spans in a comment are removed. In source code,
+# the tone rule does not apply to a line that starts with TODO, FIXME, XXX, or NOTE, and
+# a trailing ? is not reported. --comments reads every file as source code.
 #
 # Line numbers refer to the original file.
 #
@@ -130,12 +131,16 @@ strip_code() {
 				# The single quote, as an octal escape, because the awk program is a
 				# single-quoted shell string.
 				sq = "\047"
+				preprocessor = "^[[:space:]]*(include|define|undef|if|ifdef|ifndef|elif|else|endif|pragma|error|warning|line)([^[:alnum:]_]|$)"
 			}
 			{
 				line = $0
 				out = ""
 				if (block == "" && match(line, line_comment)) {
 					out = substr(line, RSTART + RLENGTH)
+					# A # line whose text starts with a C preprocessor directive name is a
+					# directive, not a comment.
+					if (substr(line, RSTART, RLENGTH) ~ /#$/ && out ~ preprocessor) out = ""
 					line = ""
 				}
 				while (line != "") {

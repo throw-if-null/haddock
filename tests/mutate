@@ -61,6 +61,7 @@ BEHAVIOR_MUTANTS=(
 	"trailing comment not checked	s/t = trailing(line)/t = 0/"
 	"quote count ignored	s/if (odd(before, dq) || odd(before, sq)) continue/if (0) continue/"
 	"whitespace before the marker not required	s/if (substr(\$0, abs - 1, 1) !~ \/\[\[:space:\]\]\/) continue/if (0) continue/"
+	"preprocessor lines checked	/out ~ preprocessor) out = \"\"/d"
 	"comment marker kept	s/out = substr(line, RSTART + RLENGTH)/out = line/"
 	"inline code in a comment not removed	/gsub(\/\`\[^\`\]\*\`\/, \"CODE\", out)/d"
 	"task marker line reports tone	/\[ -n \"\${task\[\$2\]:-}\" \] \&\& return 0/d"

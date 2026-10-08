@@ -47,6 +47,11 @@ setup() {
 	[ -z "$output" ]
 }
 
+@test "source code: a C preprocessor directive is not a comment" {
+	run -0 "$CHECK" preprocessor.c
+	[ -z "$output" ]
+}
+
 @test "source code: a marker inside a string literal, or without whitespace before it, is not a comment" {
 	run -0 "$CHECK" comments-trailing.py
 	[ -z "$output" ]

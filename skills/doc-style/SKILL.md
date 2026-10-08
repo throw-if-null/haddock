@@ -74,7 +74,10 @@ The checker cannot detect these. Verify each one before reporting the work compl
 The checker reads a file that is not `.md` or `.markdown` as source code. `--comments`
 reads every file as source code. In source code, the checker checks only comment text:
 
-- A line that starts with `//`, `#`, `--`, or `;`.
+- A line that starts with `//`, `#`, `--`, or `;`. A `#` line whose text starts with a C
+  preprocessor directive name is not a comment. The names are `include`, `define`,
+  `undef`, `if`, `ifdef`, `ifndef`, `elif`, `else`, `endif`, `pragma`, `error`, `warning`,
+  and `line`.
 - A `#` or `//` comment after code on the same line, when two conditions hold: whitespace
   precedes the marker, and the `"` and `'` characters before it on the line are both even
   in number. A marker inside a string literal does not start a comment.
