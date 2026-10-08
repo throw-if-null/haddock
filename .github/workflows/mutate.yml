@@ -24,10 +24,9 @@ defaults:
   run:
     shell: bash
 
-# A fork does not have the UBUNTU_VERSION repository variable. runs-on then uses 24.04.
 jobs:
   mutate:
-    runs-on: ubuntu-${{ vars.UBUNTU_VERSION || '24.04' }}
+    runs-on: ubuntu-${{ vars.UBUNTU_VERSION }}
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v5

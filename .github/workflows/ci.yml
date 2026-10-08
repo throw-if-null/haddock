@@ -11,10 +11,9 @@ defaults:
   run:
     shell: bash
 
-# A fork does not have the UBUNTU_VERSION repository variable. runs-on then uses 24.04.
 jobs:
   check:
-    runs-on: ubuntu-${{ vars.UBUNTU_VERSION || '24.04' }}
+    runs-on: ubuntu-${{ vars.UBUNTU_VERSION }}
     env:
       # mise.ci.toml adds Claude Code, which only the plugin validation needs.
       MISE_ENV: ci
