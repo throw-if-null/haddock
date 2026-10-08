@@ -5,6 +5,7 @@
 
 mod config;
 mod directive;
+mod length;
 mod patterns;
 mod strip;
 
@@ -16,10 +17,13 @@ use std::process::ExitCode;
 use regex::Regex;
 use std::sync::LazyLock;
 
-const DEFAULT_MAX_WORDS: u64 = 25;
+const DEFAULT_MAX_WORDS: usize = 25;
 
 /// The number of bytes of the source line that a pattern finding shows.
 const SNIPPET_BYTES: usize = 52;
+
+/// The number of characters of the sentence that a length finding shows.
+const SENTENCE_CHARS: usize = 56;
 
 const SUMMARY: &str = "Candidates reported. Rewrite each one, or keep it and state the reason.";
 
@@ -29,7 +33,7 @@ static TASK: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[[:space:]]*(TODO|FIXME|XXX|NOTE)\b").unwrap());
 
 struct Options {
-    max_words: u64,
+    max_words: usize,
     comments: bool,
     files: Vec<String>,
 }
@@ -85,9 +89,9 @@ fn parse_args(args: &[String]) -> Result<Options, UsageError> {
                 if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
                     return Err(UsageError::Usage);
                 }
-                // The bash checker accepts any digit string. A value above u64::MAX is a
+                // The bash checker accepts any digit string. A value above usize::MAX is a
                 // limit that no sentence reaches.
-                options.max_words = value.parse().unwrap_or(u64::MAX);
+                options.max_words = value.parse().unwrap_or(usize::MAX);
             }
             "--comments" => options.comments = true,
             "-h" | "--help" => return Err(UsageError::Usage),
@@ -191,7 +195,19 @@ fn scan_file(file: &str, options: &Options) -> Result<Vec<Finding>, Vec<String>>
             }
         }
     }
-    // sort_by_key is stable, as `sort -s` is: findings on one line keep the rule order.
+    for sentence in length::sentences(&stripped) {
+        if sentence.words <= options.max_words || suppressed(patterns::LENGTH, sentence.line) {
+            continue;
+        }
+        let shown: String = sentence.text.chars().take(SENTENCE_CHARS).collect();
+        let (line, words) = (sentence.line, sentence.words);
+        findings.push(Finding {
+            line,
+            text: format!("{file}:{line}: [length] {words}-word sentence: {shown}...").into_bytes(),
+        });
+    }
+    // sort_by_key is stable, as `sort -s` is: findings on one line keep the rule order,
+    // and a length finding follows the pattern findings.
     findings.sort_by_key(|finding| finding.line);
     Ok(findings)
 }
