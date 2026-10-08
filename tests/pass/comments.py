@@ -7,7 +7,7 @@ def just_magic(robust=True):
 
     The value is an integer.
     """
-    very = os.environ.get("LIMIT", "load-bearing — really")  # Is this just magic?
+    very = os.environ.get("LIMIT", "load-bearing — really")  # Is the value read once?
     return very
 
 

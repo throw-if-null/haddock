@@ -74,8 +74,10 @@ The checker cannot detect these. Verify each one before reporting the work compl
 The checker reads a file that is not `.md` or `.markdown` as source code. `--comments`
 reads every file as source code. In source code, the checker checks only comment text:
 
-- A line that starts with `//`, `#`, `--`, or `;`. A comment after code on the same line
-  is not checked.
+- A line that starts with `//`, `#`, `--`, or `;`.
+- A `#` or `//` comment after code on the same line, when two conditions hold: whitespace
+  precedes the marker, and the `"` and `'` characters before it on the line are both even
+  in number. A marker inside a string literal does not start a comment.
 - A block between `/*` and `*/`. A `/*` opens a block only at the start of a line or after
   whitespace. A path glob such as `src/*.go` does not open a block.
 - A block between `"""` and `"""`.

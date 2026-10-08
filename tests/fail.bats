@@ -72,6 +72,16 @@ setup() {
 	assert_snapshot comments.sh.expected
 }
 
+@test "source code: a # comment after code is checked, and the string before it is not" {
+	run -1 "$CHECK" comments-trailing.py
+	assert_snapshot comments-trailing.py.expected
+}
+
+@test "source code: a // comment after code is checked" {
+	run -1 "$CHECK" comments-trailing.go
+	assert_snapshot comments-trailing.go.expected
+}
+
 @test "source code: a line that starts with -- is a comment" {
 	run -1 "$CHECK" comments.sql
 	assert_snapshot comments.sql.expected

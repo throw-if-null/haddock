@@ -9,5 +9,5 @@ import "fmt"
  */
 func main() {
 	x := "just magic — really robust; feel free!" /* The value is a string. */
-	fmt.Println(x) // Is this just magic? A comment after code is not checked.
+	fmt.Println(x) // Is the value printed once?
 }
