@@ -37,7 +37,7 @@ setup() {
 	assert_snapshot tone.expected
 }
 
-@test "chain: an em dash, a double hyphen, and a semicolon are reported" {
+@test "chain: an em dash, a double hyphen, a semicolon, and a trailing , which are reported" {
 	run -1 "$CHECK" chain.md
 	assert_snapshot chain.expected
 }

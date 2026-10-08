@@ -73,8 +73,12 @@ After:  Two mechanisms depend on the distinction:
 
 - Use one term for one concept, in every document. Never substitute a synonym for variety.
 - Replace every idiom and metaphor with the behaviour it described.
-- Remove vague qualifiers: `just`, `simply`, `basically`, `obviously`, `of course`,
-  `a bit`, `fairly`, `pretty much`, `worth doing`.
+- Remove vague qualifiers:
+  - Words: `just`, `simply`, `basically`, `obviously`, `actually`, `fairly`, `quite`,
+    `somewhat`, `very`, `really`, `nicely`, `easily`, `ideally`, `hopefully`, `probably`,
+    `mostly`, `various`.
+  - Phrases: `of course`, `a bit`, `pretty much`, `more or less`, `worth doing`,
+    `worth knowing`, `worth the effort`, `in general`, `generally speaking`, `simple enough`.
 - Remove filler openers: `Note that`, `It is worth noting`, `Keep in mind`, `Let us`.
 - Do not attribute intent to software. A component sends, reads, writes, or rejects. It
   does not know, want, or talk to.

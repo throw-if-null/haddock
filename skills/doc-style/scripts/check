@@ -46,7 +46,7 @@ PATTERNS=(
 	"anthropomorphism	talks? to|knows about|is smart enough|magically|decides to|is happy|complains|cares about|is aware of|doesn't like|wants to know"
 	"hype	\bleverage|\butilize|seamless|\brobust\b|\bpowerful\b|cutting.edge|state of the art|game.chang|best.in.class|\bblazing|effortless|rich set of|\belegant\b|\bdelightful\b|\bcomprehensive\b"
 	"tone	!\s*$|^[^#|>].*\?\s*$|\bcool\b|\bawesome\b|\bnice!"
-	"chain	—|[[:space:]]--[[:space:]]|;[[:space:]]"
+	"chain	—|[[:space:]]--[[:space:]]|;[[:space:]]|, which\b"
 )
 
 # Every rule ID: the PATTERNS labels and length.
