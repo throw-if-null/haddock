@@ -94,14 +94,14 @@ file, or an invalid suppression. The checker reports candidates, not errors. Rew
 one, or keep it and state the reason.
 
 The checker reads a `.md` or `.markdown` file as Markdown. It reads any other file as
-source code, and checks only the comments: lines that start with `//`, `#`, `--`, or `;`,
-and blocks between `/*` and `*/` or between `"""` and `"""`. A `#` or `//` comment after
-code is checked when two conditions hold: whitespace precedes the marker, and the `"` and
-`'` characters before it on the line are both even in number. A `#` line whose text starts
-with a C preprocessor directive name, such as `include` or `define`, is not a comment.
-`--comments` reads every file as source code. In source code, the `tone` rule does not
-apply to a line that starts with `TODO`, `FIXME`, `XXX`, or `NOTE`. A trailing `?` is not
-reported.
+source code, and checks only the comments. A comment is a line that starts with `//`, `#`,
+`--`, or `;`, or a block. The block forms are `/*` and `*/`, `"""` and `"""`, `'''` and
+`'''`, `<!--` and `-->`, and `--[[` and `]]`. A `#` or `//` comment after code is checked
+when two conditions hold: whitespace precedes the marker, and the `"` and `'` characters
+before it on the line are both even in number. A `#` line whose text starts with a C
+preprocessor directive name, such as `include` or `define`, is not a comment. `--comments`
+reads every file as source code. In source code, the `tone` rule does not apply to a line
+that starts with `TODO`, `FIXME`, `XXX`, or `NOTE`. A trailing `?` is not reported.
 
 ```bash
 ~/.local/share/haddock/skills/doc-style/scripts/check src/worker.py

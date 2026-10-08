@@ -83,7 +83,11 @@ reads every file as source code. In source code, the checker checks only comment
   in number. A marker inside a string literal does not start a comment.
 - A block between `/*` and `*/`. A `/*` opens a block only at the start of a line or after
   whitespace. A path glob such as `src/*.go` does not open a block.
-- A block between `"""` and `"""`.
+- A block between `"""` and `"""`, or between `'''` and `'''`.
+- A block between `<!--` and `-->`, in HTML, XML, Vue, Svelte, and any other file that
+  uses it.
+- A block between `--[[` and `]]`, in Lua. A `--[[` at the start of a line opens a block,
+  and does not start a `--` line comment.
 
 Inline code spans in a comment are removed before matching. The `tone` rule does not apply
 to a line that starts with `TODO`, `FIXME`, `XXX`, or `NOTE`. A trailing `?` is not
