@@ -28,6 +28,10 @@ const PATTERNS: &[(&str, &str)] = &[
         "hype",
         r"\bleverage|\butilize|\bseamless|\brobust\b|\bpowerful\b|\bcutting.edge\b|\bstate of the art\b|\bgame.chang|\bbest.in.class\b|\bblazing|\beffortless|\brich set of\b|\belegant\b|\bdelightful\b|\bcomprehensive\b",
     ),
+    (
+        "tone",
+        r"!\s*$|^[^#|>].*\?\s*$|\bcool\b|\bawesome\b|\bnice!",
+    ),
 ];
 
 /// The bit of the length rule.
