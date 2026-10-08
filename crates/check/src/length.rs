@@ -106,3 +106,96 @@ impl Paragraph {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::sentences;
+
+    /// Return the start line and the word count of each sentence.
+    fn split(lines: &[&str]) -> Vec<(usize, usize)> {
+        sentences(lines)
+            .into_iter()
+            .map(|sentence| (sentence.line, sentence.words))
+            .collect()
+    }
+
+    #[test]
+    fn cuts_at_each_terminator_followed_by_whitespace() {
+        assert_eq!(
+            split(&["One two. Three! Four? Five: six seven."]),
+            [(1, 2), (1, 1), (1, 1), (1, 1), (1, 2)]
+        );
+        assert_eq!(split(&["Version 1.2 is out."]), [(1, 4)]);
+    }
+
+    #[test]
+    fn joins_wrapped_lines_and_reports_the_start_line() {
+        assert_eq!(
+            split(&["One two", "three. Four", "five six."]),
+            [(1, 3), (2, 3)]
+        );
+    }
+
+    #[test]
+    fn starts_a_sentence_after_a_line_end_terminator_on_the_next_line() {
+        assert_eq!(split(&["One.", "Two three."]), [(1, 1), (2, 2)]);
+    }
+
+    #[test]
+    fn cuts_after_closing_emphasis_and_quotes() {
+        assert_eq!(split(&["**Lead in.** Rest of it."]), [(1, 2), (1, 3)]);
+        assert_eq!(split(&["He said \"stop.\" Then left."]), [(1, 3), (1, 2)]);
+    }
+
+    #[test]
+    fn ends_a_paragraph_at_a_blank_line() {
+        assert_eq!(split(&["One two", "", "three four"]), [(1, 2), (3, 2)]);
+    }
+
+    #[test]
+    fn excludes_a_heading_a_table_row_and_a_blockquote() {
+        let lines = [
+            "One",
+            "# Heading",
+            "two",
+            "| a | b |",
+            "three",
+            "> quote",
+            "four",
+        ];
+        assert_eq!(split(&lines), [(1, 1), (3, 1), (5, 1), (7, 1)]);
+    }
+
+    #[test]
+    fn starts_a_paragraph_at_a_list_marker_and_does_not_count_it() {
+        let lines = [
+            "- one two",
+            "  three",
+            "1. four",
+            "2) five",
+            "* six",
+            "+ seven",
+        ];
+        assert_eq!(split(&lines), [(1, 3), (3, 1), (4, 1), (5, 1), (6, 1)]);
+    }
+
+    #[test]
+    fn does_not_end_a_sentence_at_trailing_whitespace() {
+        assert_eq!(split(&["One two  ", "three."]), [(1, 3)]);
+    }
+
+    #[test]
+    fn does_not_count_a_unicode_space_as_a_word() {
+        assert_eq!(split(&["one \u{3000} two \u{2003} three"]), [(1, 3)]);
+        assert_eq!(split(&["one \u{a0} two"]), [(1, 3)]);
+    }
+
+    #[test]
+    fn keeps_the_sentence_text_without_surrounding_whitespace() {
+        let texts: Vec<String> = sentences(&["  One two.   Three  "])
+            .into_iter()
+            .map(|sentence| sentence.text)
+            .collect();
+        assert_eq!(texts, ["One two.", "Three"]);
+    }
+}

@@ -258,3 +258,79 @@ fn trailing(whole: &str, line: &str) -> Option<usize> {
         return Some(start);
     }
 }
+
+// Go keeps tests in a _test.go file of the same package. A Rust unit test module is a child
+// of the module it tests, and cfg(test) compiles it only for `cargo test`.
+#[cfg(test)]
+mod tests {
+    use super::markdown;
+
+    #[test]
+    fn keeps_one_line_per_input_line() {
+        assert_eq!(markdown("a\r\n\nb"), ["a\r", "", "b"]);
+        assert_eq!(markdown("a\n"), ["a"]);
+        assert_eq!(markdown(""), Vec::<String>::new());
+    }
+
+    #[test]
+    fn blanks_front_matter_on_line_one_only() {
+        assert_eq!(
+            markdown("---\nkey: just\n---\nText."),
+            ["", "", "", "Text."]
+        );
+        assert_eq!(
+            markdown("Text.\n---\nkey: just"),
+            ["Text.", "---", "key: just"]
+        );
+    }
+
+    #[test]
+    fn blanks_a_fenced_block_until_a_closing_fence() {
+        assert_eq!(markdown("```bash\njust\n```\nText."), ["", "", "", "Text."]);
+        assert_eq!(
+            markdown("~~~\n```\njust\n~~~\nText."),
+            ["", "", "", "", "Text."]
+        );
+    }
+
+    #[test]
+    fn closes_a_fence_only_with_as_many_marks_and_no_info_string() {
+        let text = "````\n```\n```text\njust\n````\nText.";
+        assert_eq!(markdown(text), ["", "", "", "", "", "Text."]);
+    }
+
+    #[test]
+    fn blanks_an_indented_block_after_a_blank_line() {
+        let text = "Text.\n\n    just\n\n\tjust\nText.";
+        assert_eq!(markdown(text), ["Text.", "", "", "", "", "Text."]);
+    }
+
+    #[test]
+    fn keeps_an_indented_line_after_text() {
+        assert_eq!(markdown("- item\n    wrapped"), ["- item", "    wrapped"]);
+    }
+
+    #[test]
+    fn reduces_an_inline_code_span_to_code() {
+        assert_eq!(markdown("Run `just build` now."), ["Run CODE now."]);
+    }
+
+    #[test]
+    fn removes_an_html_comment_on_one_line() {
+        assert_eq!(markdown("a <!-- removed --> b"), ["a   b"]);
+    }
+
+    #[test]
+    fn removes_an_html_comment_on_several_lines() {
+        let text = "a <!-- removed\nremoved\n--> b";
+        assert_eq!(markdown(text), ["a ", "", " b"]);
+    }
+
+    #[test]
+    fn keeps_a_directive_outside_code() {
+        let directive = "<!-- doc-style-disable tone -->";
+        assert_eq!(markdown(directive), [directive]);
+        let fenced = format!("```\n{directive}\n```");
+        assert_eq!(markdown(&fenced), ["", "", ""]);
+    }
+}
