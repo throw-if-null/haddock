@@ -17,11 +17,6 @@ setup() {
 	[ -z "$output" ]
 }
 
-@test "proper noun: Let's Encrypt is not reported" {
-	run -0 "$CHECK" proper-noun.md
-	[ -z "$output" ]
-}
-
 @test "structure: a heading, a table row, and a blockquote that end with ? are not reported" {
 	run -0 "$CHECK" structure.md
 	[ -z "$output" ]

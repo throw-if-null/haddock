@@ -20,6 +20,8 @@
 #   - The nearest .doc-style file, searched from the directory of the checked file up to
 #     the root of its git repository, holds lines of the form PATTERN RULE... A file whose
 #     path relative to the .doc-style file matches PATTERN is not checked for those rules.
+#     A line of the form allow WORD... applies to every file that the .doc-style file
+#     covers. No pattern rule reports a match whose whole text is WORD, ignoring case.
 #
 #   check docs/secrets.md README.md
 #   check --max-words 30 docs/architecture.md
@@ -123,16 +125,6 @@ long_sentences() {
 	'
 }
 
-# A match that is part of a proper noun is not the pattern it resembles. Each case names
-# the match and the surrounding text that identifies the proper noun.
-proper_noun() {
-	local match="${1,,}" line="${2,,}"
-	case "$match" in
-	"let's") [[ "$line" == *"let's encrypt"* ]] ;;
-	*) return 1 ;;
-	esac
-}
-
 # Read the code-stripped text of FILE on stdin and print LINE<TAB>RULE... for every line
 # inside a disabled region. A directive outside a code block is the only content of its
 # line. Errors go to stderr, and the exit status is then 1.
@@ -185,12 +177,13 @@ find_config() {
 	done
 }
 
-# Print the rule IDs that CONFIG disables for FILE. Each CONFIG line is a pattern and one or
-# more rule IDs. The pattern matches the path of FILE relative to the directory of CONFIG,
-# and * also matches /. A line that starts with # is a comment. Errors go to stderr, and
-# the status is then 2.
-config_rules() {
-	local config="$1" file="$2" rel line pattern rule matched n=0 bad=0 out=""
+# Print, separated by a tab, the rule IDs that CONFIG disables for FILE and the words that
+# CONFIG allows, in lower case. A CONFIG line is a pattern and one or more rule IDs, or allow and
+# one or more words. The pattern matches the path of FILE relative to the directory of
+# CONFIG, and * also matches /. A line that starts with # is a comment. Errors go to
+# stderr, and the status is then 2.
+read_config() {
+	local config="$1" file="$2" rel line pattern rule matched n=0 bad=0 out="" allow=""
 	local -a ids
 	rel="$(cd "$(dirname "$file")" && pwd -P)/${file##*/}"
 	rel="${rel#"${config%/*}"/}"
@@ -201,6 +194,15 @@ config_rules() {
 		[[ "${ids[0]}" == "#"* ]] && continue
 		pattern="${ids[0]}"
 		ids=("${ids[@]:1}")
+		if [ "$pattern" = allow ]; then
+			if ((${#ids[@]})); then
+				allow+=" ${ids[*],,}"
+			else
+				err "$config:$n: no word after allow"
+				bad=1
+			fi
+			continue
+		fi
 		if ((${#ids[@]} == 0)); then
 			err "$config:$n: no rule after pattern: $pattern"
 			bad=1
@@ -221,7 +223,7 @@ config_rules() {
 		done
 	done <"$config"
 	((bad == 0)) || return 2
-	printf '%s\n' "$out"
+	printf '%s\t%s\n' "$out" "$allow"
 }
 
 # suppressed RULE LINE succeeds when RULE is disabled at LINE, by the .doc-style file or by
@@ -230,16 +232,28 @@ suppressed() {
 	[[ " $config_off ${line_off[$2]:-} " == *" $1 "* ]]
 }
 
+# allowed MATCH succeeds when the whole text of MATCH, in lower case, is a word on an allow
+# line of the .doc-style file. It reads allow from the calling scan_file.
+allowed() {
+	local word
+	for word in "${allow[@]}"; do
+		[ "$word" = "${1,,}" ] && return 0
+	done
+	return 1
+}
+
 scan_file() {
-	local file="$1" stripped joined entry label regex hits line match snippet config config_off="" regions rules finding
-	local -a src
+	local file="$1" stripped joined entry label regex hits line match snippet config settings config_off="" regions rules finding
+	local -a src allow=()
 	local -A line_off=()
 	if [ ! -f "$file" ]; then
 		err "no such file: $file"
 		return 2
 	fi
 	if config="$(find_config "$file")"; then
-		config_off="$(config_rules "$config" "$file")" || return 2
+		settings="$(read_config "$config" "$file")" || return 2
+		config_off="${settings%%	*}"
+		read -r -a allow <<<"${settings#*	}"
 	fi
 	mapfile -t src <"$file"
 	stripped="$(strip_code "$file")"
@@ -265,7 +279,7 @@ scan_file() {
 				[ -n "$line" ] || continue
 				match="${match//_/-}"
 				snippet="${src[line - 1]}"
-				proper_noun "$match" "$snippet" && continue
+				allowed "$match" && continue
 				suppressed "$label" "$line" && continue
 				snippet="${snippet#"${snippet%%[![:space:]]*}"}"
 				printf '%s:%s: [%s] %s | %.52s\n' "$file" "$line" "$label" "$match" "$snippet"

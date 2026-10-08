@@ -25,7 +25,6 @@ BEHAVIOR_MUTANTS=(
 	"inline code not removed	s/gsub(\/\`\[^\`\]\*\`\/, \"CODE\"); //"
 	"hyphen does not join a compound	s/^\tjoined=.*/\tjoined=\"\$stripped\"/"
 	"match shows _ in place of -	/match=\"\${match\/\/_\/-}\"/d"
-	"proper noun not excluded	/proper_noun \"\$match\" \"\$snippet\" \&\& continue/d"
 	"sentence cut ignores closing emphasis	s/\[\.!?:\]\[\*\`\")\\\\\]\]\*/[.!?:]/"
 	"list marker does not start a paragraph	/\[0-9\]+\[\.)\]/s|/^|/^NEVER|"
 	"surrounding whitespace counted as a word	/gsub(\/^\[\[:space:\]\]+|\[\[:space:\]\]+\$\/, \"\", parts\[i\])/d"
@@ -59,6 +58,10 @@ BEHAVIOR_MUTANTS=(
 	"pattern without a rule in .doc-style accepted	s/if ((\${#ids\[@\]} == 0)); then/if false; then/"
 	"comment line in .doc-style not ignored	/\[\[ \"\${ids\[0\]}\" == \"#\"\* \]\] \&\& continue/d"
 	"blank line in .doc-style not ignored	/((\${#ids\[@\]})) || continue/d"
+	"allowlist ignored	/allowed \"\$match\" \&\& continue/d"
+	"allowlist matches substrings	s/\[ \"\$word\" = \"\${1,,}\" \]/[[ \"\${1,,}\" == *\"\$word\"* ]]/"
+	"allowlist case-sensitive	s/\${1,,}/\$1/;s/\${ids\[\*\],,}/\${ids[*]}/"
+	"allow without a word accepted	s/if ((\${#ids\[@\]})); then/if true; then/"
 )
 
 # List every top-level alternative of every PATTERNS regex as LABEL<TAB>INDEX<TAB>TEXT,

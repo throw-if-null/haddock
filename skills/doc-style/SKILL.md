@@ -87,7 +87,7 @@ The installer stops at the prompt Continue?
 <!-- doc-style-enable tone -->
 ```
 
-To suppress rules in whole files, add a line to a `.doc-style` file. Each line is a path
+To suppress rules in whole files, add a line to a `.doc-style` file. The line holds a path
 pattern and one or more rule IDs. The pattern matches the path relative to the
 `.doc-style` file, and `*` also matches `/`. A line that starts with `#` is a comment.
 
@@ -98,6 +98,17 @@ docs/glossary.md   idiom qualifier filler hype
 
 The checker uses the nearest `.doc-style` file between the checked file and the root of its
 git repository. A `.doc-style` file above the repository root does not apply.
+
+To allow a word, add a line of the form `allow WORD...` to the `.doc-style` file. The line
+applies to every file that uses this `.doc-style` file. No rule other than `length` reports
+a match whose whole text is an allowed word. The comparison ignores case. For example,
+`allow magic` allows `magic`, and does not allow `magically`. Use it for a proper noun that
+contains an excluded word, and state the reason in a comment.
+
+```text
+# Let's Encrypt is the name of a certificate authority.
+allow let's
+```
 
 ## Constraints
 

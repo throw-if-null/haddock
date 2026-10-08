@@ -82,7 +82,7 @@ The installer stops at the prompt Continue?
 <!-- doc-style-enable tone -->
 ```
 
-Suppress rules for whole files with a `.doc-style` file. Each line is a path pattern and
+Suppress rules for whole files with a `.doc-style` file. A line holds a path pattern and
 one or more rule IDs. The pattern matches the path relative to the `.doc-style` file, and
 `*` also matches `/`:
 
@@ -93,6 +93,15 @@ docs/glossary.md   idiom qualifier filler hype
 
 The checker uses the nearest `.doc-style` file between the checked file and the root of
 its git repository. An unknown rule ID is an error.
+
+Allow a word with a line of the form `allow WORD...` in the `.doc-style` file. The line
+applies to every file that uses this `.doc-style` file. No rule other than `length` reports
+a match whose whole text is an allowed word, ignoring case:
+
+```text
+# Let's Encrypt is the name of a certificate authority.
+allow let's
+```
 
 ## Tests
 
