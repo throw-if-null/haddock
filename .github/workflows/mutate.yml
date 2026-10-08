@@ -1,0 +1,33 @@
+name: Mutate
+
+# The mutation check takes minutes, so it runs only when the checker or the tests change.
+on:
+  push:
+    paths:
+      - skills/doc-style/scripts/check
+      - tests/**
+      - mise.toml
+      - mise.lock
+      - .github/workflows/mutate.yml
+  pull_request:
+    paths:
+      - skills/doc-style/scripts/check
+      - tests/**
+      - mise.toml
+      - mise.lock
+      - .github/workflows/mutate.yml
+
+# An explicit shell runs each step with -e and -o pipefail. The default shell sets only -e.
+defaults:
+  run:
+    shell: bash
+
+# A fork does not have the UBUNTU_VERSION repository variable. runs-on then uses 24.04.
+jobs:
+  mutate:
+    runs-on: ubuntu-${{ vars.UBUNTU_VERSION || '24.04' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+      - name: Mutation check
+        run: tests/mutate

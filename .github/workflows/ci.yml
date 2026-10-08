@@ -37,11 +37,3 @@ jobs:
             and ([.contents[].errors[]] | length == 0)
             and ([.contents[].warnings[] | select(.message | startswith("CLAUDE.md at the plugin root") | not)] | length == 0)
           ' validate.json
-
-  mutate:
-    runs-on: ubuntu-${{ vars.UBUNTU_VERSION || '24.04' }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v5
-      - name: Mutation check
-        run: tests/mutate
