@@ -20,6 +20,10 @@ const PATTERNS: &[(&str, &str)] = &[
         "filler",
         r"\bnote that\b|\bworth noting\b|\bkeep in mind\b|\bbear in mind\b|\bas you can see\b|\blet's\b|\blet us\b|\bwe'll\b|\bwe will now\b|\byou'll want\b|\bfeel free\b|\bdon't worry\b|\bremember that\b|\bplease note\b|\bthat said\b|\bto be honest\b|\bas mentioned (above|earlier)\b",
     ),
+    (
+        "anthropomorphism",
+        r"\btalks? to\b|\bknows about\b|\bis smart enough\b|\bmagically\b|\bdecides to\b|\bis happy\b|\bcomplains\b|\bcares about\b|\bis aware of\b|\bdoesn't like\b|\bwants to know\b",
+    ),
 ];
 
 /// The bit of the length rule.
