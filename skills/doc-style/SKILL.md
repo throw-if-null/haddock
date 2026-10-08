@@ -45,8 +45,8 @@ verbatim.
    state the reason. A hit inside a quotation, a rules table, or an example of what not to
    write is expected. Keep it.
 
-   The patterns assume Markdown. Run it on a source file to check long comment blocks, and
-   ignore the hits produced by the file's own syntax.
+   The checker reads a `.md` or `.markdown` file as Markdown. It reads any other file as
+   source code, and checks only the comments. See [Source files](#source-files).
 5. Run the manual pass. The checker cannot detect the items in
    [Manual pass](#manual-pass).
 6. Report what changed. State explicitly when a rule was not applied and why.
@@ -66,6 +66,21 @@ The checker cannot detect these. Verify each one before reporting the work compl
   need.
 - **Rhetorical framing.** Headings and openers describe content, not the reader's expected
   reaction.
+
+## Source files
+
+The checker reads a file that is not `.md` or `.markdown` as source code. `--comments`
+reads every file as source code. In source code, the checker checks only comment text:
+
+- A line that starts with `//`, `#`, `--`, or `;`. A comment after code on the same line
+  is not checked.
+- A block between `/*` and `*/`. A `/*` opens a block only at the start of a line or after
+  whitespace. A path glob such as `src/*.go` does not open a block.
+- A block between `"""` and `"""`.
+
+Inline code spans in a comment are removed before matching. The `tone` rule does not apply
+to a line that starts with `TODO`, `FIXME`, `XXX`, or `NOTE`. A trailing `?` is not
+reported.
 
 ## Suppression
 
@@ -87,7 +102,7 @@ The installer stops at the prompt Continue?
 <!-- doc-style-enable tone -->
 ```
 
-To suppress rules in whole files, add a line to a `.doc-style` file. Each line is a path
+To suppress rules in whole files, add a line to a `.doc-style` file. The line holds a path
 pattern and one or more rule IDs. The pattern matches the path relative to the
 `.doc-style` file, and `*` also matches `/`. A line that starts with `#` is a comment.
 
@@ -98,6 +113,17 @@ docs/glossary.md   idiom qualifier filler hype
 
 The checker uses the nearest `.doc-style` file between the checked file and the root of its
 git repository. A `.doc-style` file above the repository root does not apply.
+
+To allow a word, add a line of the form `allow WORD...` to the `.doc-style` file. The line
+applies to every file that uses this `.doc-style` file. No rule other than `length` reports
+a match whose whole text is an allowed word. The comparison ignores case. For example,
+`allow magic` allows `magic`, and does not allow `magically`. Use it for a proper noun that
+contains an excluded word, and state the reason in a comment.
+
+```text
+# Let's Encrypt is the name of a certificate authority.
+allow let's
+```
 
 ## Constraints
 

@@ -8,7 +8,8 @@ setup() {
 
 @test "every fixture is run by a test" {
 	local fixture missing=0
-	for fixture in pass/*.md fail/*.md; do
+	for fixture in pass/* fail/*; do
+		[[ "$fixture" == *.expected ]] && continue
 		if ! grep -q -F " ${fixture#*/}" "${fixture%%/*}.bats"; then
 			echo "$fixture: no test in ${fixture%%/*}.bats runs it"
 			missing=1
@@ -19,7 +20,8 @@ setup() {
 
 @test "every fail fixture states its rule on line 1" {
 	local fixture missing=0
-	for fixture in fail/*.md; do
+	for fixture in fail/*; do
+		[[ "$fixture" == *.expected ]] && continue
 		if ! head -n 1 "$fixture" | grep -q '^<!-- Rule: .* -->$'; then
 			echo "$fixture: line 1 is not a <!-- Rule: ... --> comment"
 			missing=1

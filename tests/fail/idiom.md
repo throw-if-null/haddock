@@ -1,4 +1,4 @@
-<!-- Rule: replace every idiom and metaphor with the behavior it describes. Each item uses one entry from the checker's idiom list. -->
+<!-- Rule: replace every idiom and metaphor with the behavior it describes. Each item uses one entry from the checker's idiom list. The last nine items use the plural form of a count noun. -->
 
 - load-bearing
 - belt and braces
@@ -42,3 +42,12 @@
 - swiss army
 - apples to apples
 - the name of the game
+- silver bullets
+- rabbit holes
+- first-class citizens
+- footguns
+- gotchas
+- happy paths
+- sanity checks
+- deep dives
+- band-aids

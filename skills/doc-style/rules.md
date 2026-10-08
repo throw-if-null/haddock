@@ -13,49 +13,25 @@ Apply Simplified Technical English (STE) principles where practical. Do not enfo
 
 Apply these rules to text output, code discussions, architecture reviews, commit messages, PR summaries, and documentation.
 
-- Prefer precise technical terminology.
-- Use short, direct sentences.
-- Prefer one requirement or instruction per sentence.
-- Remove conversational filler, greetings, and unnecessary apologies.
-- Avoid idioms, metaphors, rhetorical language, and vague qualifiers.
 - Prefer literal descriptions of system behavior.
-- Use the same term for the same concept.
-- Do not use synonyms only to vary wording.
-- State assumptions explicitly when they affect implementation or conclusions.
-- Distinguish facts, requirements, assumptions, and recommendations.
-- Do not simplify established technical terminology.
-- Use MUST, MUST NOT, SHOULD, and MAY when requirement strength matters.
 - Resolve ambiguity from available context when the decision is safe and reversible.
 - Ask for clarification when ambiguity can cause a destructive, irreversible, security-sensitive, or materially incorrect change.
 
 ### Code explanations and architecture
 
 - Describe components and relationships literally.
-- Prefer "Component A sends data to Component B" over "Component A talks to Component B."
 - State technical conclusions directly.
-- Separate facts, requirements, assumptions, and recommendations.
 - Explain reasoning when it materially helps implementation, debugging, or a technical decision.
 - Do not add speculative requirements.
 - Do not introduce abstractions for hypothetical future requirements.
 
-### Documentation
-
-- Prefer short sentences.
-- Use one instruction per sentence when practical.
-- Prefer active voice when it improves clarity.
-- Use consistent terminology for the same concept.
-- Do not use synonyms only to vary wording.
-- Prefer lists for independent requirements or steps.
-- Prefer examples when they clarify exact behavior.
-- Do not duplicate information without a concrete reason.
-
 ## Sentences
 
 - State one fact, requirement, or instruction per sentence.
-- Keep sentences to 25 words or fewer. Split a longer sentence.
+- Keep sentences short and direct, with 25 words or fewer. Split a longer sentence.
 - Split a clause chain joined by an em dash, a semicolon, or a trailing `, which` into
   separate sentences.
-- Use active voice when it names the component that acts.
+- Use active voice when it names the component that acts, or when it improves clarity.
 - Use a colon to introduce a list. Do not use an em dash.
 
 ```text
@@ -72,14 +48,20 @@ After:  Two mechanisms depend on the distinction:
 ## Words
 
 - Use one term for one concept, in every document. Never substitute a synonym for variety.
-- Replace every idiom and metaphor with the behaviour it described.
-- Remove vague qualifiers: `just`, `simply`, `basically`, `obviously`, `of course`,
-  `a bit`, `fairly`, `pretty much`, `worth doing`.
-- Remove filler openers: `Note that`, `It is worth noting`, `Keep in mind`, `Let us`.
+- Replace every idiom and metaphor with the behaviour it described. Do not use rhetorical
+  language.
+- Remove vague qualifiers:
+  - Words: `just`, `simply`, `basically`, `obviously`, `actually`, `fairly`, `quite`,
+    `somewhat`, `very`, `really`, `nicely`, `easily`, `ideally`, `hopefully`, `probably`,
+    `mostly`, `various`.
+  - Phrases: `of course`, `a bit`, `pretty much`, `more or less`, `worth doing`,
+    `worth knowing`, `worth the effort`, `in general`, `generally speaking`, `simple enough`.
+- Remove conversational filler, greetings, and unnecessary apologies. Remove the filler
+  openers `Note that`, `It is worth noting`, `Keep in mind`, and `Let us`.
 - Do not attribute intent to software. A component sends, reads, writes, or rejects. It
   does not know, want, or talk to.
-- Keep established technical terminology. Do not simplify `idempotent`, `quorum`,
-  `fail closed`, or `transaction`.
+- Prefer precise technical terminology. Keep established technical terminology. Do not
+  simplify `idempotent`, `quorum`, `fail closed`, or `transaction`.
 
 Frequent replacements:
 
@@ -116,7 +98,8 @@ Description: The build copies the lock file to the output directory.
 - Use a list for independent requirements or steps.
 - Use a table when every item has the same fields.
 - Use an example when it fixes exact behaviour: a command, a path, a value.
-- State each fact in one place. Link to it from anywhere else.
+- State each fact in one place. Link to it from anywhere else. Duplicate a fact only for
+  a concrete reason.
 - Give each section a heading that names its subject, not its rhetorical role.
 
 ## Facts, requirements, assumptions, recommendations
@@ -131,3 +114,4 @@ Mark which one a sentence is. Use these frames:
 | Recommendation | An API key SHOULD be narrowed to the endpoints its client calls. |
 
 Do not state a recommendation as a fact. Do not state an assumption as a requirement.
+State assumptions explicitly when they affect implementation or conclusions.
