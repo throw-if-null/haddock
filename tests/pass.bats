@@ -32,6 +32,21 @@ setup() {
 	[ -z "$output" ]
 }
 
+@test "source code: only the comments and docstrings of a Python file are checked" {
+	run -0 "$CHECK" comments.py
+	[ -z "$output" ]
+}
+
+@test "source code: only the comments of a Go file are checked" {
+	run -0 "$CHECK" comments.go
+	[ -z "$output" ]
+}
+
+@test "source code: only the comments of a shell script are checked, and a path glob does not open a block" {
+	run -0 "$CHECK" comments.sh
+	[ -z "$output" ]
+}
+
 @test "length: sentences within the limit, a bold lead-in, and short list items are not reported" {
 	run -0 "$CHECK" length.md
 	[ -z "$output" ]

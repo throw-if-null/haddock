@@ -45,8 +45,8 @@ verbatim.
    state the reason. A hit inside a quotation, a rules table, or an example of what not to
    write is expected. Keep it.
 
-   The patterns assume Markdown. Run it on a source file to check long comment blocks, and
-   ignore the hits produced by the file's own syntax.
+   The checker reads a `.md` or `.markdown` file as Markdown. It reads any other file as
+   source code, and checks only the comments. See [Source files](#source-files).
 5. Run the manual pass. The checker cannot detect the items in
    [Manual pass](#manual-pass).
 6. Report what changed. State explicitly when a rule was not applied and why.
@@ -66,6 +66,21 @@ The checker cannot detect these. Verify each one before reporting the work compl
   need.
 - **Rhetorical framing.** Headings and openers describe content, not the reader's expected
   reaction.
+
+## Source files
+
+The checker reads a file that is not `.md` or `.markdown` as source code. `--comments`
+reads every file as source code. In source code, the checker checks only comment text:
+
+- A line that starts with `//`, `#`, `--`, or `;`. A comment after code on the same line
+  is not checked.
+- A block between `/*` and `*/`. A `/*` opens a block only at the start of a line or after
+  whitespace. A path glob such as `src/*.go` does not open a block.
+- A block between `"""` and `"""`.
+
+Inline code spans in a comment are removed before matching. The `tone` rule does not apply
+to a line that starts with `TODO`, `FIXME`, `XXX`, or `NOTE`. A trailing `?` is not
+reported.
 
 ## Suppression
 

@@ -68,6 +68,16 @@ The exit status is 0 with no findings, 1 with findings, and 2 for a usage error,
 file, or an invalid suppression. The checker reports candidates, not errors. Rewrite each
 one, or keep it and state the reason.
 
+The checker reads a `.md` or `.markdown` file as Markdown. It reads any other file as
+source code, and checks only the comments: lines that start with `//`, `#`, `--`, or `;`,
+and blocks between `/*` and `*/` or between `"""` and `"""`. `--comments` reads every file
+as source code. In source code, the `tone` rule does not apply to a line that starts with
+`TODO`, `FIXME`, `XXX`, or `NOTE`. A trailing `?` is not reported.
+
+```bash
+~/.local/share/haddock/skills/doc-style/scripts/check src/worker.py
+```
+
 ## Suppress a rule
 
 A rule ID is a label the checker prints: `idiom`, `qualifier`, `filler`, `anthropomorphism`,
