@@ -138,7 +138,8 @@ claude plugin validate .    # the plugin manifest and the marketplace file
 ```
 
 `tests/mutate` runs the suite once per mutant, in parallel. It takes about a minute on
-32 processors and several minutes on 4. `MUTATE_JOBS` sets the number of parallel runs.
+32 processors and several minutes on 4. `MUTATE_JOBS` sets the number of parallel runs,
+and `--verbose` prints one line per mutant.
 
 ## License
 

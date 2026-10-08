@@ -18,8 +18,10 @@ jobs:
       # mise.ci.toml adds Claude Code, which only the plugin validation needs.
       MISE_ENV: ci
     steps:
-      - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v5
+      - name: Check out the repository
+        uses: actions/checkout@v7
+      - name: Install the pinned tools
+        uses: jdx/mise-action@v5
       - name: shellcheck
         run: shellcheck skills/doc-style/scripts/check tests/run tests/mutate tests/test_helper.bash tests/*.bats
       - name: shfmt

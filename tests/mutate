@@ -10,11 +10,23 @@
 #
 # The script writes every mutant to its own directory first, then runs the suite for all
 # of them in parallel, then reports the verdicts in order. MUTATE_JOBS sets the number of
-# parallel runs. The default is the number of processors.
+# parallel runs. The default is the number of processors. --verbose prints one line per
+# mutant as its verdict lands.
 #
 # Exit status: 0 every mutant detected, 1 at least one mutant not detected, 2 tests/run
-# fails on the unmodified checker.
+# fails on the unmodified checker, or a usage error.
 set -euo pipefail
+
+verbose=0
+for arg in "$@"; do
+	case "$arg" in
+	--verbose) verbose=1 ;;
+	*)
+		echo "usage: ${0##*/} [--verbose]" >&2
+		exit 2
+		;;
+	esac
+done
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 check="$root/skills/doc-style/scripts/check"
@@ -187,6 +199,8 @@ for entry in "${BEHAVIOR_MUTANTS[@]}"; do
 	add_mutant "${entry%%	*}"
 done
 
+echo "$count mutants, $jobs jobs"
+
 # Run the suite for every mutant without a verdict. Each run has its own checker and
 # its own bats temporary directory, so the runs do not interfere.
 # shellcheck disable=SC2016 # The variables belong to the inner shell.
@@ -197,7 +211,10 @@ find "$work" -mindepth 1 -maxdepth 1 -type d '!' -exec test -e '{}/verdict' ';' 
 		else
 			echo "DETECTED" >"$1/verdict"
 		fi
-	' _ '{}' "$root/tests/run"
+		if (($3)); then
+			echo "$(tr "[:upper:]" "[:lower:]" <"$1/verdict"): $(cat "$1/name")"
+		fi
+	' _ '{}' "$root/tests/run" "$verbose"
 
 detected=0
 undetected=0

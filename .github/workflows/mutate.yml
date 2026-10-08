@@ -28,7 +28,9 @@ jobs:
   mutate:
     runs-on: ubuntu-${{ vars.UBUNTU_VERSION }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v5
+      - name: Check out the repository
+        uses: actions/checkout@v7
+      - name: Install the pinned tools
+        uses: jdx/mise-action@v5
       - name: Mutation check
-        run: tests/mutate
+        run: tests/mutate --verbose
