@@ -1,6 +1,6 @@
 {
   "name": "haddock",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Write and check documentation in controlled technical English with the doc-style skill and its checker.",
   "author": { "name": "Mirza Merdovic" },
   "repository": "https://github.com/throw-if-null/haddock",
