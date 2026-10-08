@@ -20,13 +20,29 @@ Each layer has one job.
 | Skill | `skills/doc-style/` | Holds the full rules, the procedure, and the examples. This is the only place the full rules are stated. |
 | Checker | `skills/doc-style/scripts/check` | Reports the constructions the rules exclude. |
 
+`.claude-plugin/` holds the plugin manifest and the marketplace file.
+
 ## Requirements
 
 - Linux. The checker needs Bash 4 or later and GNU grep.
 - For the tests: `bats-core` 1.7.0 or later, `shellcheck`, and `shfmt`. `mise install`
   installs the pinned versions from `mise.toml`.
 
-## Install the skill
+## Install as a plugin
+
+The repository is a Claude Code plugin and its own marketplace. Add the marketplace once,
+then install the plugin:
+
+```text
+/plugin marketplace add throw-if-null/haddock
+/plugin install haddock@throw-if-null
+```
+
+Claude Code loads the skill when a task matches its description, and `/haddock:doc-style`
+loads it on demand. To try the plugin without installing it, start a session with
+`claude --plugin-dir /path/to/haddock`.
+
+## Install by hand
 
 Clone the repository, then link the skill into the directory Claude Code scans for
 personal skills:
@@ -36,8 +52,7 @@ git clone https://github.com/throw-if-null/haddock.git ~/.local/share/haddock
 ln -s ~/.local/share/haddock/skills/doc-style ~/.claude/skills/doc-style
 ```
 
-Claude Code loads the skill when a task matches its description, and `/doc-style` loads
-it on demand. `/skills` lists the loaded skills.
+`/doc-style` then loads the skill on demand, and `/skills` lists it.
 
 To install the skill for one project instead, link it into the project's
 `.claude/skills/` directory.
@@ -117,15 +132,12 @@ allow let's
 ## Tests
 
 ```bash
-tests/run      # the test suite
-tests/mutate   # breaks each checker rule in turn and confirms that a test fails
+tests/run                   # the test suite
+tests/mutate                # breaks each checker rule in turn and confirms that a test fails
+claude plugin validate .    # the plugin manifest and the marketplace file
 ```
 
 `tests/mutate` takes several minutes.
-
-## Planned
-
-- Packaging as a Claude Code plugin, so one install provides the skill.
 
 ## License
 
