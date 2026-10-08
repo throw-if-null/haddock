@@ -54,6 +54,7 @@ BEHAVIOR_MUTANTS=(
 	"surrounding whitespace counted as a word	/gsub(\/^\[\[:space:\]\]+|\[\[:space:\]\]+\$\/, \"\", parts\[i\])/d"
 	"list marker counted as a word	/sub(\/^\[\[:space:\]\]\*(\[-\*+\]|\[0-9\]+\[\.)\])\[\[:space:\]\]+\/, \"\", text)/d"
 	"length reports the paragraph line	s/file, start\[i\], count/file, start[1], count/"
+	"cut marker can occur in text	s/\\\\001/@@CUT@@/g"
 	"trailing whitespace ends a sentence on its own line	/sub(\/\[\[:space:\]\]+\$\/, \"\", text)/d"
 	"heading, table, blockquote join a paragraph	/^\t*\/\^\[\[:space:\]\]\*\[#|>\]\/ { flush(); next }$/d"
 	"tone question includes heading, table, blockquote	s/\^\[\^#|>\]\.\*/^.*/"

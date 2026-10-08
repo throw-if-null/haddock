@@ -201,11 +201,12 @@ strip_code() {
 long_sentences() {
 	local file="$1"
 	awk -v file="$file" -v limit="$MAX_WORDS" '
-		# add TEXT appends a line to the paragraph in buf, and copies buf to cut with
-		# @@CUT@@ after each sentence terminator. Each new terminator starts a sentence on
-		# this line, and start records that line. A terminator at the end of a line takes
-		# effect when the next line adds the joining space, so the next sentence starts on
-		# that line.
+		# add TEXT appends a line to the paragraph in buf. It copies buf to cut, with the
+		# control character \001 after each sentence terminator. A text file does not
+		# contain \001, so only a terminator marks a cut. Each new terminator starts a
+		# sentence on this line, and start records that line. A terminator at the end of a
+		# line takes effect when the next line adds the joining space. The next sentence
+		# then starts on that line.
 		function add(text,  n) {
 			if (buf == "") {
 				ends = 0
@@ -217,12 +218,12 @@ long_sentences() {
 			# A terminator may carry closing emphasis, a backtick, a quote or a bracket
 			# before the space. Cutting only on the bare terminator merges a bold lead-in
 			# sentence with the sentence after it and reports the pair as one.
-			n = gsub(/[.!?:][*`")\]]*[[:space:]]+/, "&@@CUT@@", cut)
+			n = gsub(/[.!?:][*`")\]]*[[:space:]]+/, "&\001", cut)
 			while (ends < n) start[++ends + 1] = NR
 		}
 		function flush(  parts, words, n, i, count) {
 			if (buf ~ /^[[:space:]]*$/) { buf = ""; return }
-			n = split(cut, parts, "@@CUT@@")
+			n = split(cut, parts, "\001")
 			for (i = 1; i <= n; i++) {
 				# Leading or trailing whitespace makes split() return an empty field, which
 				# is not a word.
