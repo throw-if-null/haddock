@@ -16,6 +16,10 @@ const PATTERNS: &[(&str, &str)] = &[
         "qualifier",
         r"\bjust\b|\bsimply\b|\bbasically\b|\bobviously\b|\bof course\b|\bactually\b|\bfairly\b|\bquite\b|\bpretty much\b|\ba bit\b|\bsomewhat\b|\bvery\b|\breally\b|\bmore or less\b|\bnicely\b|\beasily\b|\bworth (doing|knowing|the)\b|\bideally\b|\bhopefully\b|\bprobably\b|\bmostly\b|\bvarious\b|\bin general\b|\bgenerally speaking\b|\bsimple enough\b",
     ),
+    (
+        "filler",
+        r"\bnote that\b|\bworth noting\b|\bkeep in mind\b|\bbear in mind\b|\bas you can see\b|\blet's\b|\blet us\b|\bwe'll\b|\bwe will now\b|\byou'll want\b|\bfeel free\b|\bdon't worry\b|\bremember that\b|\bplease note\b|\bthat said\b|\bto be honest\b|\bas mentioned (above|earlier)\b",
+    ),
 ];
 
 /// The bit of the length rule.
