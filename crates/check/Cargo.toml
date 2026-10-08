@@ -1,0 +1,10 @@
+[package]
+name = "doc-style-check"
+version = "0.1.0"
+edition = "2024"
+description = "The doc-style checker, ported from skills/doc-style/scripts/check."
+license = "MIT"
+publish = false
+
+[dependencies]
+regex = "1.13.1"
