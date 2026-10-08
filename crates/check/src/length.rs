@@ -3,15 +3,15 @@
 use regex::Regex;
 use std::sync::LazyLock;
 
-use crate::is_space;
+use crate::{is_space, posix_regex};
 
 // A terminator may carry closing emphasis, a backtick, a quote, or a bracket before the
 // space. A cut on the bare terminator merges a bold lead-in sentence with the next one.
 static TERMINATOR: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r#"[.!?:][*`")\]]*[[:space:]]+"#).unwrap());
+    LazyLock::new(|| posix_regex(r#"[.!?:][*`")\]]*[[:space:]]+"#));
 
 static LIST_MARKER: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[[:space:]]*([-*+]|[0-9]+[.)])[[:space:]]+").unwrap());
+    LazyLock::new(|| posix_regex(r"^[[:space:]]*([-*+]|[0-9]+[.)])[[:space:]]+"));
 
 /// One sentence of a paragraph.
 #[derive(Debug, PartialEq)]

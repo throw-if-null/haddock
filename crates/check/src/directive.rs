@@ -4,13 +4,13 @@
 use regex::Regex;
 use std::sync::LazyLock;
 
-use crate::{is_space, patterns};
+use crate::{is_space, patterns, posix_regex};
 
 // The opener is split, so that a check of this file does not read a block here.
 static DIRECTIVE: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(concat!("^[[:space:]]*<!", "--[[:space:]]*doc-style-")).unwrap());
+    LazyLock::new(|| posix_regex(concat!("^[[:space:]]*<!", "--[[:space:]]*doc-style-")));
 
-static END: LazyLock<Regex> = LazyLock::new(|| Regex::new("[[:space:]]*-->[[:space:]]*$").unwrap());
+static END: LazyLock<Regex> = LazyLock::new(|| posix_regex("[[:space:]]*-->[[:space:]]*$"));
 
 /// Report whether a line of code-stripped text is a directive.
 pub fn is_directive(line: &str) -> bool {

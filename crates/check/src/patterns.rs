@@ -2,8 +2,10 @@
 //! bitmask. Pattern rule `i` is the bit `1 << i`, and the length rule is the bit after the
 //! last pattern rule.
 
-use regex::{Regex, RegexBuilder};
+use regex::Regex;
 use std::sync::LazyLock;
+
+use crate::posix_regex;
 
 /// Each entry is a rule ID and one case-insensitive regular expression. Each expression is
 /// the `PATTERNS` entry of the bash checker, unchanged.
@@ -47,13 +49,7 @@ pub const ALL: u16 = (LENGTH << 1) - 1;
 static COMPILED: LazyLock<Vec<(&str, Regex)>> = LazyLock::new(|| {
     PATTERNS
         .iter()
-        .map(|&(label, pattern)| {
-            let regex = RegexBuilder::new(pattern)
-                .case_insensitive(true)
-                .build()
-                .unwrap();
-            (label, regex)
-        })
+        .map(|&(label, pattern)| (label, posix_regex(&format!("(?i){pattern}"))))
         .collect()
 });
 

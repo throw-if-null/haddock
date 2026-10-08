@@ -5,29 +5,27 @@
 use regex::Regex;
 use std::sync::LazyLock;
 
-use crate::{directive, is_space, split_lines};
+use crate::{directive, is_space, posix_regex, split_lines};
 
-static CODE_SPAN: LazyLock<Regex> = LazyLock::new(|| Regex::new("`[^`]*`").unwrap());
+static CODE_SPAN: LazyLock<Regex> = LazyLock::new(|| posix_regex("`[^`]*`"));
 
-static FENCE_OPEN: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new("^[[:space:]]*(```+|~~~+)").unwrap());
+static FENCE_OPEN: LazyLock<Regex> = LazyLock::new(|| posix_regex("^[[:space:]]*(```+|~~~+)"));
 
 static FENCE_CLOSE: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new("^[[:space:]]*(```+|~~~+)[[:space:]]*$").unwrap());
+    LazyLock::new(|| posix_regex("^[[:space:]]*(```+|~~~+)[[:space:]]*$"));
 
 static LINE_COMMENT: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new("^[[:space:]]*(//+|#+|--+|;+)").unwrap());
+    LazyLock::new(|| posix_regex("^[[:space:]]*(//+|#+|--+|;+)"));
 
 // A Lua long comment opener at the start of a line. It is not a line comment. The opener
 // is split, so that a check of this file does not read a block here.
 static LONG_COMMENT: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(concat!(r"^[[:space:]]*-", r"-\[\[")).unwrap());
+    LazyLock::new(|| posix_regex(concat!(r"^[[:space:]]*-", r"-\[\[")));
 
 static PREPROCESSOR: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(
+    posix_regex(
         "^[[:space:]]*(include|define|undef|if|ifdef|ifndef|elif|else|endif|pragma|error|warning|line)([^[:alnum:]_]|$)",
     )
-    .unwrap()
 });
 
 const HTML_OPEN: &str = concat!("<!", "--");

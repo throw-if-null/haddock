@@ -30,7 +30,13 @@ const SUMMARY: &str = "Candidates reported. Rewrite each one, or keep it and sta
 // Go has package-level `var task = regexp.MustCompile(...)`, compiled at program start. A
 // Rust static must be a constant expression, so LazyLock compiles the regex on first use.
 static TASK: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[[:space:]]*(TODO|FIXME|XXX|NOTE)\b").unwrap());
+    LazyLock::new(|| posix_regex(r"^[[:space:]]*(TODO|FIXME|XXX|NOTE)\b"));
+
+/// `[[:space:]]` as glibc defines it in a UTF-8 locale. GNU grep, gawk, sed, and bash read
+/// the expressions of the bash checker with this class, and GNU grep reads `\s` as it.
+/// Rust `[[:space:]]` is ASCII only, and Rust `\s` also matches the no-break spaces.
+const GLIBC_SPACE: &str =
+    r"[\t\n\x0B\x0C\r \x{1680}\x{2000}-\x{2006}\x{2008}-\x{200A}\x{2028}\x{2029}\x{205F}\x{3000}]";
 
 struct Options {
     max_words: usize,
@@ -221,18 +227,32 @@ fn exempt(comment: &str, matched: &str) -> bool {
 /// Return the source line without leading whitespace, cut to SNIPPET_BYTES bytes. The cut
 /// can split a multi-byte character, as the bash printf does.
 fn snippet(line: &[u8]) -> &[u8] {
-    let start = line
-        .iter()
-        .position(|&byte| !is_space(char::from(byte)))
-        .unwrap_or(line.len());
+    // A replacement character stands for an invalid byte, and it is not whitespace. The
+    // whitespace prefix is then valid UTF-8, with the same length in both forms.
+    let text = String::from_utf8_lossy(line);
+    let start = text.len() - text.trim_start_matches(is_space).len();
     let line = &line[start..];
     &line[..line.len().min(SNIPPET_BYTES)]
 }
 
-/// Report whether `c` is in the POSIX `[[:space:]]` class of the C locale.
-/// `char::is_ascii_whitespace` does not include the vertical tab.
+/// Report whether `c` is in GLIBC_SPACE. `char::is_whitespace` also accepts the no-break
+/// spaces, and `char::is_ascii_whitespace` rejects the vertical tab.
 fn is_space(c: char) -> bool {
-    matches!(c, ' ' | '\t' | '\n' | '\x0b' | '\x0c' | '\r')
+    matches!(
+        c,
+        '\t' | '\n' | '\x0B' | '\x0C' | '\r' | ' ' | '\u{1680}' | '\u{2000}'..='\u{2006}'
+            | '\u{2008}'..='\u{200A}' | '\u{2028}' | '\u{2029}' | '\u{205F}' | '\u{3000}'
+    )
+}
+
+/// Compile an expression of the bash checker with the glibc classes. `[[:space:]]` and
+/// `\s` are GLIBC_SPACE. `[:alnum:]` in a bracket expression is a Unicode letter or number.
+fn posix_regex(pattern: &str) -> Regex {
+    let pattern = pattern
+        .replace("[[:space:]]", GLIBC_SPACE)
+        .replace(r"\s", GLIBC_SPACE)
+        .replace("[:alnum:]", r"\p{Alphabetic}\p{N}");
+    Regex::new(&pattern).unwrap()
 }
 
 /// Split `text` into lines as awk splits records: at each `\n`, with `\r` kept, and without
