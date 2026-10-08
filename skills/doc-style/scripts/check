@@ -24,9 +24,10 @@
 #   - A line that holds only <!-- doc-style-disable RULE... --> suppresses the listed rules
 #     until a line that holds only <!-- doc-style-enable RULE... -->, or until the end of
 #     the file. Without a rule ID, or with all, the comment applies to every rule.
-#   - The nearest .doc-style file, searched from the directory of the checked file up to
-#     the root of its git repository, holds lines of the form PATTERN RULE... A file whose
-#     path relative to the .doc-style file matches PATTERN is not checked for those rules.
+#   - The checker searches for the nearest .doc-style file, from the directory of the
+#     checked file up to the root of its git repository. The file holds lines of the form
+#     PATTERN RULE... A file whose path relative to the .doc-style file matches PATTERN is
+#     not checked for those rules.
 #     A line of the form allow WORD... applies to every file that the .doc-style file
 #     covers. No pattern rule reports a match whose whole text is WORD, ignoring case.
 #
@@ -225,8 +226,8 @@ long_sentences() {
 			if (buf ~ /^[[:space:]]*$/) { buf = ""; return }
 			n = split(cut, parts, "\001")
 			for (i = 1; i <= n; i++) {
-				# Leading or trailing whitespace makes split() return an empty field, which
-				# is not a word.
+				# Leading or trailing whitespace makes split() return an empty field. An
+				# empty field is not a word.
 				gsub(/^[[:space:]]+|[[:space:]]+$/, "", parts[i])
 				count = split(parts[i], words, /[[:space:]]+/)
 				if (count > limit)

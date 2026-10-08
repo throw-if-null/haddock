@@ -86,7 +86,7 @@ CONFIG
 
 @test "allow: no pattern rule reports a word on an allow line, and other matches are reported" {
 	cat >.doc-style <<'CONFIG'
-# Let's Encrypt is the name of a certificate authority.
+# The name of the certificate authority starts with an excluded word.
 allow let's
 allow robust
 CONFIG
