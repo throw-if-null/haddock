@@ -193,7 +193,7 @@ strip_code() {
 
 # Read the code-stripped text of FILE on stdin and report sentences longer than MAX_WORDS.
 # Paragraphs are accumulated because a sentence spans several wrapped lines. The reported
-# line is where the paragraph starts.
+# line is where the sentence starts.
 #
 # A list marker starts a new paragraph. Without that rule a list of short items is
 # accumulated into one buffer and reported as a single long sentence. A wrapped
@@ -201,21 +201,35 @@ strip_code() {
 long_sentences() {
 	local file="$1"
 	awk -v file="$file" -v limit="$MAX_WORDS" '
-		function flush(  tmp, parts, words, n, i, count) {
-			if (buf ~ /^[[:space:]]*$/) { buf = ""; return }
-			tmp = buf
+		# add TEXT appends a line to the paragraph in buf, and copies buf to cut with
+		# @@CUT@@ after each sentence terminator. Each new terminator starts a sentence on
+		# this line, and start records that line. A terminator at the end of a line takes
+		# effect when the next line adds the joining space, so the next sentence starts on
+		# that line.
+		function add(text,  n) {
+			if (buf == "") {
+				ends = 0
+				start[1] = NR
+			}
+			sub(/[[:space:]]+$/, "", text)
+			buf = buf " " text
+			cut = buf
 			# A terminator may carry closing emphasis, a backtick, a quote or a bracket
 			# before the space. Cutting only on the bare terminator merges a bold lead-in
 			# sentence with the sentence after it and reports the pair as one.
-			gsub(/[.!?:][*`")\]]*[[:space:]]+/, "&@@CUT@@", tmp)
-			n = split(tmp, parts, "@@CUT@@")
+			n = gsub(/[.!?:][*`")\]]*[[:space:]]+/, "&@@CUT@@", cut)
+			while (ends < n) start[++ends + 1] = NR
+		}
+		function flush(  parts, words, n, i, count) {
+			if (buf ~ /^[[:space:]]*$/) { buf = ""; return }
+			n = split(cut, parts, "@@CUT@@")
 			for (i = 1; i <= n; i++) {
 				# Leading or trailing whitespace makes split() return an empty field, which
 				# is not a word.
 				gsub(/^[[:space:]]+|[[:space:]]+$/, "", parts[i])
 				count = split(parts[i], words, /[[:space:]]+/)
 				if (count > limit)
-					printf "%s:%d: [length] %d-word sentence: %.56s...\n", file, start, count, parts[i]
+					printf "%s:%d: [length] %d-word sentence: %.56s...\n", file, start[i], count, parts[i]
 			}
 			buf = ""
 		}
@@ -223,16 +237,13 @@ long_sentences() {
 		/^[[:space:]]*[#|>]/ { flush(); next }
 		/^[[:space:]]*([-*+]|[0-9]+[.)])[[:space:]]/ {
 			flush()
-			start = NR
 			# The list marker is not a word of the sentence.
-			buf = $0
-			sub(/^[[:space:]]*([-*+]|[0-9]+[.)])[[:space:]]+/, "", buf)
+			text = $0
+			sub(/^[[:space:]]*([-*+]|[0-9]+[.)])[[:space:]]+/, "", text)
+			add(text)
 			next
 		}
-		{
-			if (buf == "") start = NR
-			buf = buf " " $0
-		}
+		{ add($0) }
 		END { flush() }
 	'
 }
