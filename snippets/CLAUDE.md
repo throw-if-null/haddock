@@ -15,6 +15,5 @@ The skill holds the full rules. In summary:
 
 Run the skill's checker, `scripts/check` in the skill directory, on each changed Markdown
 file. Rewrite each finding, or keep it and state the reason. Before you open a pull
-request, run the checker on every Markdown file in the change set:
-
-    git diff --name-only --diff-filter=d "$(git merge-base HEAD main)" -- '*.md' | xargs -r ~/.claude/skills/doc-style/scripts/check
+request, run `/haddock:doc-style-check`. It runs the checker on every Markdown file in
+the change set.

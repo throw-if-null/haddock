@@ -20,7 +20,8 @@ Each layer has one job.
 | Skill | `skills/doc-style/` | Holds the full rules, the procedure, and the examples. This is the only place the full rules are stated. |
 | Checker | `skills/doc-style/scripts/check` | Reports the constructions the rules exclude. |
 
-`.claude-plugin/` holds the plugin manifest and the marketplace file.
+`.claude-plugin/` holds the plugin manifest and the marketplace file. `commands/` holds
+the plugin command.
 
 ## Requirements
 
@@ -39,7 +40,8 @@ then install the plugin:
 ```
 
 Claude Code loads the skill when a task matches its description, and `/haddock:doc-style`
-loads it on demand. To try the plugin without installing it, start a session with
+loads it on demand. `/haddock:doc-style-check` runs the checker on every Markdown file in
+the change set. To try the plugin without installing it, start a session with
 `claude --plugin-dir /path/to/haddock`.
 
 ## Install by hand
@@ -56,6 +58,13 @@ ln -s ~/.local/share/haddock/skills/doc-style ~/.claude/skills/doc-style
 
 To install the skill for one project instead, link it into the project's
 `.claude/skills/` directory.
+
+The `/haddock:doc-style-check` command is available only with the plugin install. With
+the install by hand, run its equivalent before you open a pull request:
+
+```bash
+git diff --name-only --diff-filter=d --merge-base main -- '*.md' | xargs -r ~/.local/share/haddock/skills/doc-style/scripts/check
+```
 
 ## Add the primer
 
