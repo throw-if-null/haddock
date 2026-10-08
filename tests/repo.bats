@@ -45,7 +45,7 @@ assert_listed_words_reported() {
 @test "repo: the checker reports every word in the rules.md qualifier and filler lists" {
 	mkdir "$BATS_TEST_TMPDIR/.git"
 	assert_listed_words_reported qualifier "Remove vague qualifiers"
-	assert_listed_words_reported filler "Remove filler openers"
+	assert_listed_words_reported filler "Remove conversational filler"
 }
 
 @test "repo: no tracked file mentions Codex" {
