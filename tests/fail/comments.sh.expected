@@ -1,0 +1,4 @@
+comments.sh:3: [idiom] load-bearing | # Run `just build` before the tests. The build step 
+comments.sh:4: [qualifier] just | # TODO: the cache is just a workaround!
+
+Candidates reported. Rewrite each one, or keep it and state the reason.

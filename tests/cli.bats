@@ -21,6 +21,23 @@ setup() {
 	[[ "$stderr" == usage:* ]]
 }
 
+@test "--comments: a Markdown file is read as source code" {
+	cd "$BATS_TEST_TMPDIR" || return 1
+	mkdir .git
+	printf '# The heading is robust.\n\nThe idiom is load-bearing.\n' >doc.md
+	run -1 "$CHECK" --comments doc.md
+	[[ "$output" == "doc.md:1: [hype] robust | # The heading is robust."* ]]
+	[[ "$output" != *"load-bearing"* ]]
+}
+
+@test "a .markdown file is read as Markdown" {
+	cd "$BATS_TEST_TMPDIR" || return 1
+	mkdir .git
+	printf 'The idiom is load-bearing.\n' >doc.markdown
+	run -1 "$CHECK" doc.markdown
+	[[ "$output" == "doc.markdown:1: [idiom] load-bearing"* ]]
+}
+
 @test "missing file: exits 2 and names the file" {
 	run -2 --separate-stderr "$CHECK" missing.md
 	[[ "$stderr" == *"no such file: missing.md"* ]]

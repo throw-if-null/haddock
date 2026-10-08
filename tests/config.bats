@@ -84,6 +84,41 @@ CONFIG
 	[ -z "$output" ]
 }
 
+@test "allow: no pattern rule reports a word on an allow line, and other matches are reported" {
+	cat >.doc-style <<'CONFIG'
+# The name of the certificate authority starts with an excluded word.
+allow let's
+allow robust
+CONFIG
+	printf "The parser is robust. It requests certificates from Let's Encrypt. Let us check.\n" >README.md
+	run -1 "$CHECK" README.md
+	[[ "$output" == *"README.md:1: [filler] Let us |"* ]]
+	[[ "$output" != *"[filler] Let's"* ]]
+	[[ "$output" != *"[hype]"* ]]
+}
+
+@test "allow: the comparison ignores case" {
+	printf "allow LET'S\n" >.doc-style
+	printf "It requests certificates from Let's Encrypt.\n" >README.md
+	run -0 "$CHECK" README.md
+	[ -z "$output" ]
+}
+
+@test "allow: a word matches the whole text of a match, not a part of it" {
+	printf 'allow magic robustly\n' >.doc-style
+	printf 'The step works magically. The parser is robust.\n' >README.md
+	run -1 "$CHECK" README.md
+	[[ "$output" == *"README.md:1: [anthropomorphism] magically |"* ]]
+	[[ "$output" == *"README.md:1: [hype] robust |"* ]]
+}
+
+@test "allow without a word in .doc-style: exits 2 and names the line" {
+	printf 'allow\n' >.doc-style
+	printf 'Text.\n' >README.md
+	run -2 --separate-stderr "$CHECK" README.md
+	[[ "$stderr" == *"/.doc-style:1: no word after allow" ]]
+}
+
 @test "unknown rule in .doc-style: exits 2 and names the line" {
 	printf 'docs/*.md tone\nREADME.md tnoe\n' >.doc-style
 	printf 'Text.\n' >README.md

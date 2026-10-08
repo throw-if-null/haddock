@@ -37,7 +37,7 @@ setup() {
 	assert_snapshot tone.expected
 }
 
-@test "chain: an em dash, a double hyphen, and a semicolon are reported" {
+@test "chain: an em dash, a double hyphen, a semicolon, and a trailing , which are reported" {
 	run -1 "$CHECK" chain.md
 	assert_snapshot chain.expected
 }
@@ -50,6 +50,36 @@ setup() {
 @test "length: --max-words sets the limit" {
 	run -1 "$CHECK" --max-words 10 length-max-words.md
 	assert_snapshot length-max-words.expected
+}
+
+@test "code: the text after a code block or an HTML comment is reported on its own line" {
+	run -1 "$CHECK" code-end.md
+	assert_snapshot code-end.expected
+}
+
+@test "source code: findings in Python comments and docstrings are reported" {
+	run -1 "$CHECK" comments.py
+	assert_snapshot comments.py.expected
+}
+
+@test "source code: findings in Go line comments and block comments are reported" {
+	run -1 "$CHECK" comments.go
+	assert_snapshot comments.go.expected
+}
+
+@test "source code: a task marker line in a shell script is exempt from the tone rule only" {
+	run -1 "$CHECK" comments.sh
+	assert_snapshot comments.sh.expected
+}
+
+@test "source code: a line that starts with -- is a comment" {
+	run -1 "$CHECK" comments.sql
+	assert_snapshot comments.sql.expected
+}
+
+@test "source code: a line that starts with ; is a comment" {
+	run -1 "$CHECK" comments.ini
+	assert_snapshot comments.ini.expected
 }
 
 @test "suppress: a disable comment suppresses the listed rules until the enable comment" {

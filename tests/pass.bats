@@ -12,13 +12,43 @@ setup() {
 	[ -z "$output" ]
 }
 
-@test "length: sentences within the limit, a bold lead-in, and short list items are not reported" {
-	run -0 "$CHECK" length.md
+@test "code: a tilde fence is code, and a backtick fence line does not close it" {
+	run -0 "$CHECK" code-tilde.md
 	[ -z "$output" ]
 }
 
-@test "proper noun: Let's Encrypt is not reported" {
-	run -0 "$CHECK" proper-noun.md
+@test "code: a fence closes only at a fence line of the same length or longer, without an info string" {
+	run -0 "$CHECK" code-long-fence.md
+	[ -z "$output" ]
+}
+
+@test "code: a line indented by four spaces or a tab after a blank line is code" {
+	run -0 "$CHECK" code-indented.md
+	[ -z "$output" ]
+}
+
+@test "code: an HTML comment on one line or on several lines is not reported" {
+	run -0 "$CHECK" html-comment.md
+	[ -z "$output" ]
+}
+
+@test "source code: only the comments and docstrings of a Python file are checked" {
+	run -0 "$CHECK" comments.py
+	[ -z "$output" ]
+}
+
+@test "source code: only the comments of a Go file are checked" {
+	run -0 "$CHECK" comments.go
+	[ -z "$output" ]
+}
+
+@test "source code: only the comments of a shell script are checked, and a path glob does not open a block" {
+	run -0 "$CHECK" comments.sh
+	[ -z "$output" ]
+}
+
+@test "length: sentences within the limit, a bold lead-in, and short list items are not reported" {
+	run -0 "$CHECK" length.md
 	[ -z "$output" ]
 }
 
@@ -29,6 +59,11 @@ setup() {
 
 @test "words: a pattern inside a longer word is not reported" {
 	run -0 "$CHECK" words.md
+	[ -z "$output" ]
+}
+
+@test "compound: a pattern inside a hyphenated compound is not reported" {
+	run -0 "$CHECK" compound.md
 	[ -z "$output" ]
 }
 
