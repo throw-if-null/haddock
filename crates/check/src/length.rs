@@ -75,9 +75,8 @@ impl Paragraph {
         self.text.push(' ');
         self.text.push_str(line.trim_end_matches(is_space));
         let terminators = TERMINATOR.find_iter(&self.text).count();
-        while self.starts.len() <= terminators {
-            self.starts.push(number);
-        }
+        // The count never drops when a line is appended, so resize only appends here.
+        self.starts.resize(terminators + 1, number);
     }
 
     /// Move the sentences of the paragraph to `result`, and start an empty paragraph.
