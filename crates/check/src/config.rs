@@ -125,62 +125,121 @@ fn relative_path(config: &Path, file: &Path) -> String {
 /// Match `text` against a bash pattern, as `[[ $text == $pattern ]]` does. `*` matches any
 /// string, `/` included. `?` matches one character. `[...]` matches one character of a
 /// set, and `[!...]` or `[^...]` one character outside it. `\` quotes the next character.
+///
+/// The match backtracks at each `*`, so the time grows exponentially with the number of
+/// `*` characters. A `.doc-style` pattern holds few of them.
 fn glob_match(pattern: &[char], text: &[char]) -> bool {
-    let (mut p, mut t) = (0, 0);
-    // The pattern position after the last `*`, and the text position where its match ends.
-    let mut star: Option<(usize, usize)> = None;
-    while t < text.len() {
-        let next = match pattern.get(p) {
-            Some('*') => {
-                star = Some((p + 1, t));
-                p += 1;
-                continue;
-            }
-            Some('?') => Some(p + 1),
-            Some('[') => bracket(pattern, p, text[t]),
-            Some('\\') if p + 1 < pattern.len() => (pattern[p + 1] == text[t]).then_some(p + 2),
-            Some(&c) => (c == text[t]).then_some(p + 1),
-            None => None,
-        };
-        match (next, star) {
-            (Some(next), _) => {
-                p = next;
-                t += 1;
-            }
-            // Backtrack: the last `*` matches one more character.
-            (None, Some((star_p, star_t))) => {
-                p = star_p;
-                t = star_t + 1;
-                star = Some((star_p, t));
-            }
-            (None, None) => return false,
-        }
+    // A slice pattern matches the shape of a slice and binds its parts. `rest @ ..` binds
+    // the remaining elements. Go has no equivalent, and indexes the slice instead.
+    if let ['*', rest @ ..] = pattern {
+        return glob_match(rest, text)
+            || text
+                .split_first()
+                .is_some_and(|(_, text)| glob_match(pattern, text));
     }
-    pattern[p..].iter().all(|&c| c == '*')
+    let Some((&c, text)) = text.split_first() else {
+        return pattern.is_empty();
+    };
+    let rest = match pattern {
+        ['?', rest @ ..] => Some(rest),
+        ['[', ..] => bracket(pattern, c),
+        ['\\', quoted, rest @ ..] => (*quoted == c).then_some(rest),
+        [literal, rest @ ..] => (*literal == c).then_some(rest),
+        [] => None,
+    };
+    rest.is_some_and(|rest| glob_match(rest, text))
 }
 
-/// Match `c` against the bracket expression that starts at `pattern[start]`, and return
-/// the position after the expression if `c` matches. A `[` without a closing `]` is a
+/// Match `c` against the bracket expression at the start of `pattern`, and return the rest
+/// of the pattern after the expression if `c` matches. A `[` without a closing `]` is a
 /// literal `[`. A `]` directly after the opening `[`, `[!`, or `[^` is a member.
-fn bracket(pattern: &[char], start: usize, c: char) -> Option<usize> {
-    let mut i = start + 1;
-    let negate = matches!(pattern.get(i), Some('!' | '^'));
-    if negate {
-        i += 1;
-    }
-    let first = i;
-    let Some(close) = (first + 1..pattern.len()).find(|&j| pattern[j] == ']') else {
-        return (c == '[').then_some(start + 1);
+fn bracket(pattern: &[char], c: char) -> Option<&[char]> {
+    let after_open = &pattern[1..];
+    let (negate, body) = match after_open {
+        ['!' | '^', body @ ..] => (true, body),
+        body => (false, body),
     };
-    let mut member = false;
-    while i < close {
-        if i + 2 < close && pattern[i + 1] == '-' {
-            member |= (pattern[i]..=pattern[i + 2]).contains(&c);
-            i += 3;
-        } else {
-            member |= pattern[i] == c;
-            i += 1;
-        }
+    // The search for the closing `]` skips the first member.
+    let Some(close) = body.iter().skip(1).position(|&x| x == ']') else {
+        return (c == '[').then_some(after_open);
+    };
+    let (members, rest) = body.split_at(close + 1);
+    (in_set(members, c) != negate).then_some(&rest[1..])
+}
+
+/// Report whether `c` is a member of the set of a bracket expression. `a-z` is a range.
+fn in_set(members: &[char], c: char) -> bool {
+    match members {
+        [] => false,
+        [low, '-', high, rest @ ..] => (*low..=*high).contains(&c) || in_set(rest, c),
+        [member, rest @ ..] => *member == c || in_set(rest, c),
     }
-    (member != negate).then_some(close + 1)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::glob_match;
+
+    /// Match `text` against `pattern` with glob_match. Each expected result in the tests is
+    /// the result of `[[ $text == $pattern ]]` in bash.
+    fn glob(pattern: &str, text: &str) -> bool {
+        let pattern: Vec<char> = pattern.chars().collect();
+        let text: Vec<char> = text.chars().collect();
+        glob_match(&pattern, &text)
+    }
+
+    #[test]
+    fn matches_any_string_with_a_star() {
+        assert!(glob("*.md", "docs/a.md"));
+        assert!(glob("docs/*", "docs/"));
+        assert!(glob("*", ""));
+        assert!(glob("a*b*c", "axbxxc"));
+        assert!(!glob("a*b*c", "axbxx"));
+        assert!(!glob("*.md", "a.mdx"));
+    }
+
+    #[test]
+    fn matches_one_character_with_a_question_mark() {
+        assert!(glob("a?c", "a/c"));
+        assert!(!glob("a?c", "ac"));
+        assert!(!glob("?", ""));
+    }
+
+    #[test]
+    fn matches_one_character_of_a_bracket_expression() {
+        assert!(glob("[ab]", "b"));
+        assert!(!glob("[ab]", "c"));
+        assert!(glob("[a-c]x", "bx"));
+        assert!(!glob("[a-c]", "d"));
+        assert!(glob("[a-]", "-"));
+        assert!(glob("[]a]", "]"));
+    }
+
+    #[test]
+    fn matches_one_character_outside_a_negated_bracket_expression() {
+        assert!(glob("[!ab]", "c"));
+        assert!(!glob("[!ab]", "a"));
+        assert!(glob("[^ab]", "c"));
+        assert!(!glob("[!]a]", "]"));
+    }
+
+    #[test]
+    fn reads_an_unterminated_bracket_as_a_literal() {
+        assert!(glob("[ab", "[ab"));
+        assert!(!glob("[ab", "a"));
+        assert!(glob("[!", "[!"));
+    }
+
+    #[test]
+    fn quotes_the_next_character_with_a_backslash() {
+        assert!(glob(r"\*", "*"));
+        assert!(!glob(r"\*", "a"));
+        assert!(glob(r"a\", r"a\"));
+    }
+
+    #[test]
+    fn requires_a_match_of_the_whole_text() {
+        assert!(!glob("a", "ab"));
+        assert!(!glob("ab", "a"));
+    }
 }
