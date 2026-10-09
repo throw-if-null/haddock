@@ -26,8 +26,8 @@ The checker exits 1 on `tests/fail/idiom.md`, because the fixture holds findings
 
 ## Rust port
 
-The Rust port was measured on the `rust-port` branch, with the release binary. Hyperfine
-2.0 runs a command without a shell, so `--env` sets `CHECK`.
+The Rust port was measured at commit `e8ea021`, with the release binary. Hyperfine 2.0
+runs a command without a shell, so `--env` sets `CHECK`.
 
 | Measurement | Command | Rust port | Baseline (bash) |
 | --- | --- | --- | --- |
@@ -46,17 +46,20 @@ about 0.4 s of the 2.227 s. The rest is bats-core and the test scripts.
 
 ## Mutation testing
 
-`cargo mutants --jobs 32` ran on the Rust port in a systemd scope with a memory limit of
-16 GB. The conformance test runs the bats suite for each mutant.
+`cargo mutants --jobs 32` ran at commit `b6dcc29` in a systemd scope with a memory limit
+of 16 GB. The conformance test runs the bats suite for each mutant.
 
 | Item | Value |
 | --- | --- |
-| Mutants | 268 |
-| Caught | 184 |
-| Missed | 67 |
-| Unviable | 10 |
-| Timeouts | 7 |
-| Wall-clock time | 110.8 s |
+| Mutants | 194 |
+| Caught | 185 |
+| Missed | 0 |
+| Unviable | 9 |
+| Timeouts | 0 |
+| Wall-clock time | 112.9 s |
+
+During this run, another process used about 4 of the 32 processors. On an idle machine,
+the wall-clock time can be lower.
 
 For comparison, `tests/mutate` on the bash checker ran 194 mutants with 32 jobs in 60.2 s,
 and the test suite detected all of them.
