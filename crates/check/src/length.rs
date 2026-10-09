@@ -179,6 +179,11 @@ mod tests {
     }
 
     #[test]
+    fn does_not_return_an_empty_list_item_as_a_sentence() {
+        assert_eq!(split(&["- ", "1. "]), Vec::<(usize, usize)>::new());
+    }
+
+    #[test]
     fn does_not_end_a_sentence_at_trailing_whitespace() {
         assert_eq!(split(&["One two  ", "three."]), [(1, 3)]);
     }

@@ -251,7 +251,7 @@ fn trailing(whole: &str, line: &str) -> Option<usize> {
 // of the module it tests, and cfg(test) compiles it only for `cargo test`.
 #[cfg(test)]
 mod tests {
-    use super::markdown;
+    use super::{comments, markdown};
 
     #[test]
     fn keeps_one_line_per_input_line() {
@@ -294,6 +294,12 @@ mod tests {
     }
 
     #[test]
+    fn blanks_a_whitespace_line_inside_an_indented_block() {
+        let text = "Text.\n\n    just\n  \n    just\nText.";
+        assert_eq!(markdown(text), ["Text.", "", "", "", "", "Text."]);
+    }
+
+    #[test]
     fn keeps_an_indented_line_after_text() {
         assert_eq!(markdown("- item\n    wrapped"), ["- item", "    wrapped"]);
     }
@@ -320,5 +326,17 @@ mod tests {
         assert_eq!(markdown(directive), [directive]);
         let fenced = format!("```\n{directive}\n```");
         assert_eq!(markdown(&fenced), ["", "", ""]);
+    }
+
+    #[test]
+    fn reads_the_first_comment_start_on_a_line() {
+        assert_eq!(comments("x # a /* b */"), ["  a /* b */"]);
+        assert_eq!(comments("x /* a */ # b"), ["  a   b"]);
+        assert_eq!(comments("x <!-- a --> /* b */"), ["  a   b "]);
+    }
+
+    #[test]
+    fn skips_a_marker_after_an_odd_number_of_single_quotes() {
+        assert_eq!(comments("s = 'it # a' # b"), ["  b"]);
     }
 }

@@ -88,3 +88,16 @@ pub fn join_compounds(line: &str) -> String {
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::join_compounds;
+
+    #[test]
+    fn joins_a_hyphen_only_between_two_letters_or_digits() {
+        assert_eq!(
+            join_compounds("magic-free x-1 a -b a- b -a a-"),
+            "magic_free x_1 a -b a- b -a a-"
+        );
+    }
+}

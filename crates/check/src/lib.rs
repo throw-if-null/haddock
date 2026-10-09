@@ -266,3 +266,26 @@ fn split_lines(text: &str) -> Vec<&str> {
         .split('\n')
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{Options, UsageError, exempt, parse_args};
+
+    fn parse(args: &[&str]) -> Result<Options, UsageError> {
+        let args: Vec<String> = args.iter().map(|arg| arg.to_string()).collect();
+        parse_args(&args)
+    }
+
+    #[test]
+    fn reads_help_as_a_usage_error_and_not_as_an_unknown_option() {
+        assert!(matches!(parse(&["-h"]), Err(UsageError::Usage)));
+        assert!(matches!(parse(&["--help", "a.md"]), Err(UsageError::Usage)));
+    }
+
+    #[test]
+    fn exempts_a_task_marker_line_and_a_trailing_question_mark() {
+        assert!(exempt(" TODO: is this cool", "cool"));
+        assert!(exempt(" Is this right?", " Is this right?"));
+        assert!(!exempt(" This is cool", "cool"));
+    }
+}
