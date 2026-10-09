@@ -33,16 +33,19 @@ pub fn find(file: &Path) -> Option<PathBuf> {
         .filter(|parent| !parent.as_os_str().is_empty())
         .unwrap_or(Path::new("."));
     // canonicalize resolves symbolic links, as `pwd -P` does.
-    let mut dir = fs::canonicalize(parent).ok()?;
-    loop {
+    let start = fs::canonicalize(parent).ok()?;
+    // ancestors yields the path, then each parent up to the root. Go has no such iterator:
+    // a loop calls filepath.Dir until the result stops changing.
+    for dir in start.ancestors() {
         let candidate = dir.join(".doc-style");
         if candidate.is_file() {
             return Some(candidate);
         }
-        if dir.join(".git").exists() || !dir.pop() {
+        if dir.join(".git").exists() {
             return None;
         }
     }
+    None
 }
 
 /// Read `config` for `file`. A line is a path pattern and one or more rule IDs, or `allow`

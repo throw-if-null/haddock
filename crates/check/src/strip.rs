@@ -176,31 +176,31 @@ pub fn comments(text: &str) -> Vec<String> {
                 block = None;
                 continue;
             }
-            // The first opener on the line: its position, its length, and its closer.
-            let mut open: Option<(usize, usize, &str)> = None;
-            let candidates = BLOCKS
+            // The first comment start on the line: its position, the length of its opener, and
+            // its closer. A trailing comment has no closer. No two starts share a position. Only
+            // `/*` and `//` start with the same character, and their second characters differ.
+            let first = BLOCKS
                 .iter()
-                .filter_map(|&(opener, closer)| Some((line.find(opener)?, opener.len(), closer)))
-                .chain(c_block_start(line).map(|start| (start, C_OPEN.len(), C_CLOSE)));
-            for candidate in candidates {
-                if open.is_none_or(|(start, _, _)| candidate.0 < start) {
-                    open = Some(candidate);
+                .filter_map(|&(opener, closer)| {
+                    Some((line.find(opener)?, opener.len(), Some(closer)))
+                })
+                .chain(c_block_start(line).map(|start| (start, C_OPEN.len(), Some(C_CLOSE))))
+                .chain(trailing(whole, line).map(|start| (start, 0, None)))
+                .min_by_key(|&(start, _, _)| start);
+            match first {
+                None => break,
+                Some((start, _, None)) => {
+                    let text = &line[start..];
+                    let marker = if text.starts_with('#') { '#' } else { '/' };
+                    out.push(' ');
+                    out.push_str(text.trim_start_matches(marker));
+                    break;
+                }
+                Some((start, length, Some(closer))) => {
+                    line = &line[start + length..];
+                    block = Some(closer);
                 }
             }
-            if let Some(start) = trailing(whole, line)
-                && open.is_none_or(|(open_start, _, _)| start < open_start)
-            {
-                let text = &line[start..];
-                let marker = if text.starts_with('#') { '#' } else { '/' };
-                out.push(' ');
-                out.push_str(text.trim_start_matches(marker));
-                break;
-            }
-            let Some((start, length, closer)) = open else {
-                break;
-            };
-            line = &line[start + length..];
-            block = Some(closer);
         }
         result.push(CODE_SPAN.replace_all(&out, "CODE").into_owned());
     }
@@ -224,15 +224,11 @@ fn piece(out: &mut String, text: &str, closer: &str) {
 /// Return the position of the first `/*` in `line` that opens a block: at the start of the
 /// line or after whitespace. A `/*` inside a word, as in a path glob, does not open a block.
 fn c_block_start(line: &str) -> Option<usize> {
-    let mut from = 0;
-    while let Some(found) = line[from..].find(C_OPEN) {
-        let start = from + found;
-        if start == 0 || line[..start].ends_with(is_space) {
-            return Some(start);
-        }
-        from = start + C_OPEN.len();
-    }
-    None
+    // match_indices yields each match position in order, as a loop over strings.Index with
+    // a moving offset does in Go.
+    line.match_indices(C_OPEN)
+        .map(|(start, _)| start)
+        .find(|&start| start == 0 || line[..start].ends_with(is_space))
 }
 
 /// Return the position in `line` of the first `#` or `//` that starts a comment after
@@ -240,23 +236,15 @@ fn c_block_start(line: &str) -> Option<usize> {
 /// precedes the marker, and the `"` and `'` characters before it are both even in number.
 fn trailing(whole: &str, line: &str) -> Option<usize> {
     let offset = whole.len() - line.len();
-    let mut from = 0;
-    loop {
-        // `?` on an Option returns None from the function when no marker is left.
-        let start = from + line[from..].find(['#', '/'])?;
-        from = start + 1;
-        if !line[start..].starts_with('#') && !line[start..].starts_with("//") {
-            continue;
-        }
-        let before = &whole[..offset + start];
-        if !before.ends_with(is_space) {
-            continue;
-        }
-        if before.matches('"').count() % 2 == 1 || before.matches('\'').count() % 2 == 1 {
-            continue;
-        }
-        return Some(start);
-    }
+    line.match_indices(['#', '/'])
+        .map(|(start, _)| start)
+        .find(|&start| {
+            let before = &whole[..offset + start];
+            (line[start..].starts_with('#') || line[start..].starts_with("//"))
+                && before.ends_with(is_space)
+                && before.matches('"').count().is_multiple_of(2)
+                && before.matches('\'').count().is_multiple_of(2)
+        })
 }
 
 // Go keeps tests in a _test.go file of the same package. A Rust unit test module is a child
