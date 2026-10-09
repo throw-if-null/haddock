@@ -1,33 +1,36 @@
 # haddock
 
-Claude Code skills for technical writing. The first skill, `doc-style`, writes and checks
-documentation in controlled technical English. Its goal is documentation and code
-comments that are literal, short, and easy for a human to understand.
+A Claude Code plugin that holds the `doc-style` skill. The skill makes Claude maintain
+documentation and code comments as an accurate, concise description of the current system.
+Documentation is maintained, not accumulated.
 
-The rules are inspired by ASD-STE100, Simplified Technical English. They are not an
-implementation of the standard. They are opinionated by design: they fix one sentence
-length, one set of requirement keywords, and one word for each concept.
-[deviations.md](skills/doc-style/deviations.md) lists where the rules differ from the
-standard, and why.
+## What the skill does
 
-## Three layers
+When Claude changes code, the skill directs it to:
 
-Each layer has one job.
+- Find the comments, docstrings, and documents that describe the changed code.
+- Update or delete the prose that the change made wrong or redundant.
+- Edit, consolidate, or delete existing prose before it adds new prose.
+- Describe the current system, and leave the change history to commit messages and
+  changelogs.
+- Keep the constraints, invariants, and design rationale that are still true.
+- Leave correct documentation unchanged, and leave documentation that the change does not
+  affect unchanged.
 
-| Layer | Files | Job |
-| --- | --- | --- |
-| Primer | `snippets/CLAUDE.md` | Names the skill in a project's `CLAUDE.md`, so Claude loads it before it writes. |
-| Skill | `skills/doc-style/` | Holds the full rules, the procedure, and the examples. This is the only place the full rules are stated. |
-| Checker | `skills/doc-style/scripts/check` | Reports the constructions the rules exclude. |
+The skill also sets a writing style for documentation, comments, commit messages, and pull
+request descriptions: direct, literal, and concise. The style draws on ASD-STE100,
+Simplified Technical English. It does not implement that standard.
 
-`.claude-plugin/` holds the plugin manifest and the marketplace file. `commands/` holds
-the plugin command.
+| Path | Content |
+| --- | --- |
+| `skills/doc-style/SKILL.md` | The workflow and the rules. |
+| `skills/doc-style/examples/maintenance.md` | Maintenance decisions, with the text before and after. |
+| `skills/doc-style/examples/rewrites.md` | Sentence rewrites for the writing style. |
+| `snippets/CLAUDE.md` | The primer: a summary that directs Claude to apply the skill to every code change. |
+| `hooks/hooks.json` | The `SessionStart` hook that prints the primer into the session context. |
+| `evals/` | The eval cases for `claude plugin eval`. |
 
-## Requirements
-
-- Linux. The checker needs Bash 4 or later and GNU grep.
-- For the tests: `bats-core` 1.7.0 or later, `shellcheck`, and `shfmt`. `mise install`
-  installs the pinned versions from `mise.toml`.
+`.claude-plugin/` holds the plugin manifest and the marketplace file.
 
 ## Install as a plugin
 
@@ -40,13 +43,17 @@ then install the plugin:
 ```
 
 Claude Code loads the skill when a task matches its description, and `/haddock:doc-style`
-loads it on demand. `/haddock:doc-style-check` runs the checker on every Markdown file in
-the change set. To try the plugin without installing it, start a session with
+loads it on demand. A task that asks only for a code change does not reliably match the
+description. The plugin's `SessionStart` hook therefore prints the primer into the context
+of each session, including a session that resumes or compacts. The primer directs Claude to
+apply the skill to every code change.
+
+To try the plugin without installing it, start a session with
 `claude --plugin-dir /path/to/haddock`.
 
 ## Install by hand
 
-Clone the repository, then link the skill into the directory Claude Code scans for
+Clone the repository, then link the skill into the directory that Claude Code scans for
 personal skills:
 
 ```bash
@@ -56,103 +63,43 @@ ln -s ~/.local/share/haddock/skills/doc-style ~/.claude/skills/doc-style
 
 `/doc-style` then loads the skill on demand, and `/skills` lists it.
 
-To install the skill for one project instead, link it into the project's
-`.claude/skills/` directory.
+To install the skill for one project instead, link it into the project's `.claude/skills/`
+directory.
 
-The `/haddock:doc-style-check` command is available only with the plugin install. With
-the install by hand, run its equivalent before you open a pull request:
-
-```bash
-git diff --name-only --diff-filter=d --merge-base main -- '*.md' | xargs -r ~/.local/share/haddock/skills/doc-style/scripts/check
-```
-
-## Add the primer
-
-Append `snippets/CLAUDE.md` to the `CLAUDE.md` of each project that uses the skill:
+The install by hand does not install the hook. Append the primer to the `CLAUDE.md` of each
+project that uses the skill instead:
 
 ```bash
 cat ~/.local/share/haddock/snippets/CLAUDE.md >> CLAUDE.md
 ```
 
-The primer names the skill, summarizes the rules, and tells Claude to run the checker.
+## Evaluate the skill
 
-## Run the checker
-
-```bash
-~/.local/share/haddock/skills/doc-style/scripts/check README.md docs/*.md
-```
-
-Each line of the output names the file, the line, the rule, the matched text, and the
-source line:
-
-```text
-README.md:12: [idiom] load-bearing | The retry limit is load-bearing.
-```
-
-The exit status is 0 with no findings, 1 with findings, and 2 for a usage error, a missing
-file, or an invalid suppression. The checker reports candidates, not errors. Rewrite each
-one, or keep it and state the reason.
-
-The checker reads a `.md` or `.markdown` file as Markdown. It reads any other file as
-source code, and checks only the comments. A comment is a line that starts with `//`, `#`,
-`--`, or `;`, or a block. The block forms are `/*` and `*/`, `"""` and `"""`, `'''` and
-`'''`, `<!--` and `-->`, and `--[[` and `]]`. A `#` or `//` comment after code is checked
-when two conditions hold: whitespace precedes the marker, and the `"` and `'` characters
-before it on the line are both even in number. A `#` line whose text starts with a C
-preprocessor directive name, such as `include` or `define`, is not a comment. `--comments`
-reads every file as source code. In source code, the `tone` rule does not apply to a line
-that starts with `TODO`, `FIXME`, `XXX`, or `NOTE`. A trailing `?` is not reported.
+Each directory in `evals/` holds one case: a small workspace, a coding or documentation
+task, and graders. The `description` in each `case.yaml` states the behavior that the case
+tests. The graders check the files that Claude leaves in the workspace.
 
 ```bash
-~/.local/share/haddock/skills/doc-style/scripts/check src/worker.py
+claude plugin eval . --scaffold --allow-tools Edit Write
 ```
 
-## Suppress a rule
+- `--scaffold` runs the `scaffold.sh` of each case. The script copies the case's
+  `workspace/` directory into the run directory. It runs as you, outside the sandbox.
+- `--allow-tools Edit Write` grants the file edits that the cases request. Without the
+  grant, Claude cannot change the workspace. The cases do not request Bash.
+- Each run starts a Claude session with your credentials. By default, each case runs 3
+  times with the plugin and 3 times without it. `--runs`, `--case`, and `--max-cost-usd`
+  limit the cost.
+- The `skill-loaded` grader records whether Claude loaded the skill. In a run with the
+  no-plugin baseline, it is an indicator and does not count toward the score.
+- `--no-publish` keeps the HTML report local.
+- The results go to `evals/results/`, which git ignores.
 
-A rule ID is a label the checker prints: `idiom`, `qualifier`, `filler`, `anthropomorphism`,
-`hype`, `tone`, `chain`, or `length`. `all` means every rule.
-
-Suppress a rule inside a file with a comment that holds only the directive. The region
-ends at the matching enable comment, or at the end of the file:
-
-```markdown
-<!-- doc-style-disable tone -->
-The installer stops at the prompt Continue?
-<!-- doc-style-enable tone -->
-```
-
-Suppress rules for whole files with a `.doc-style` file. A line holds a path pattern and
-one or more rule IDs. The pattern matches the path relative to the `.doc-style` file, and
-`*` also matches `/`:
-
-```text
-# The glossary lists the words that the rules exclude.
-docs/glossary.md   idiom qualifier filler hype
-```
-
-The checker uses the nearest `.doc-style` file between the checked file and the root of
-its git repository. An unknown rule ID is an error.
-
-Allow a word with a line of the form `allow WORD...` in the `.doc-style` file. The line
-applies to every file that uses this `.doc-style` file. No rule other than `length` reports
-a match whose whole text is an allowed word, ignoring case:
-
-```text
-# Let's Encrypt is the name of a certificate authority.
-allow let's
-```
-
-## Tests
+## Validate the plugin
 
 ```bash
-tests/run                   # the test suite
-tests/mutate                # breaks each checker rule in turn and confirms that a test fails
-claude plugin validate .    # the plugin manifest and the marketplace file
+claude plugin validate .
 ```
-
-`tests/mutate` runs the suite once per mutant, in parallel. It takes about a minute on
-32 processors and several minutes on 4. `MUTATE_JOBS` sets the number of parallel runs,
-and `--verbose` prints one line per mutant.
 
 ## License
 

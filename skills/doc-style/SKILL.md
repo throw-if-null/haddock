@@ -1,146 +1,173 @@
 ---
 name: doc-style
-description: Write and revise documentation in controlled technical English based on ASD-STE100 (Simplified Technical English). Use this skill BEFORE writing or editing any Markdown file, README, ADR, runbook, docs/ page, long code comment, commit message body, or pull request description, and whenever the user asks to review, rewrite, tighten, shorten, or fix the tone or style of existing prose. Use it for a single paragraph or a one-line edit as well as for a full document. Use it when a task ends in a written explanation of a system.
+description: Keep code comments, docstrings, and documentation accurate when code changes. Update, consolidate, or delete the prose that a change makes wrong or redundant, and write documentation that is direct, concise, and free of change history.
+when_to_use: Use whenever you edit code (a feature, bug fix, refactor, rename, optimization, or removal), even when the user asks only for the code change and does not mention documentation or comments. Also use it before you write or edit a README, docs/ page, runbook, ADR, CLAUDE.md, code comment, docstring, commit message, or pull request description, and when you review prose or comments for clarity, concision, duplication, or outdated content.
 ---
 
-# Documentation style
+# Documentation maintenance
 
-Documentation MUST follow the rules in [rules.md](rules.md). This skill converts those rules
-into a procedure, a set of checkable patterns, and a script.
-
-| File | Content |
-| --- | --- |
-| [rules.md](rules.md) | The full rule set. |
-| [deviations.md](deviations.md) | Where the rules differ from ASD-STE100, and why. |
-| [examples/rewrites.md](examples/rewrites.md) | Before and after pairs for each defect class. |
-| `scripts/check` | The checker. |
+Keep documentation and code comments an accurate, concise description of the current
+system. Documentation is maintained, not accumulated: edit, consolidate, or delete existing
+prose before you add more.
 
 ## Scope
 
-Apply this skill to:
+Apply this skill whenever you change code, even when the task does not mention
+documentation. A feature, a fix, a refactor, a rename, or a removal can make comments,
+docstrings, and documents wrong or redundant.
 
-- Markdown files: `README.md`, `docs/**`, runbooks, ADRs, `CLAUDE.md`.
-- Commit message bodies and pull request descriptions.
-- Code comments longer than one line, and docstrings.
+Apply it also when you write, edit, or review:
 
-Do not apply it to: identifiers, quoted third-party text, or command output reproduced
-verbatim.
+- READMEs, `docs/` pages, runbooks, ADRs, and `CLAUDE.md` files.
+- Code comments and docstrings.
+- Commit messages and pull request descriptions. The [writing style](#writing-style)
+  applies to them. The [current-state rules](#describe-the-current-system) do not, because
+  these texts describe a change.
 
-## Procedure
+Do not apply it to quoted third-party text, reproduced command output, generated files,
+vendored code, or license text.
 
-1. Read the project `CLAUDE.md` if it exists. A
-   project rule overrides a rule in this skill when the two conflict. Report the conflict.
-2. Read the file you are about to change. Read one sibling document in the same directory.
-   Match the existing terminology, heading depth, and table conventions.
-3. Write the draft.
-4. Run the checker on every file you changed:
+Project instructions and established project conventions take precedence over this skill.
 
-   ```bash
-   ${CLAUDE_SKILL_DIR}/scripts/check docs/example.md
-   ```
+## Workflow
 
-   `${CLAUDE_SKILL_DIR}` is the directory that holds this file.
+Scale each step to the change. A one-line fix requires a review of the comments on that
+line and of the documentation of the changed behavior. It does not require a review of the
+repository.
 
-   The checker reports candidates, not errors. Judge each hit. Rewrite it, or keep it and
-   state the reason. A hit inside a quotation, a rules table, or an example of what not to
-   write is expected. Keep it.
+1. Identify the behavior, interface, or constraint that the change affects.
+2. Find the prose that describes it:
+   - Comments and docstrings in and next to the changed code.
+   - Documents that name a changed identifier: a function, type, command, flag,
+     configuration key, environment variable, endpoint, or error message. Search the
+     repository for these names.
+   - Documents that describe the changed behavior without naming an identifier, for
+     example a table of supported values. Read the README section and the documentation
+     page that cover the changed component.
+3. Compare each passage with the code after the change. Decide what a reader needs to know
+   now.
+4. Edit the affected passages, and only those, so that they are accurate. When two of them
+   state the same fact, keep the fact in the passage that owns the subject, and replace the
+   other with a link. See [Edit before you add](#edit-before-you-add).
+5. Confirm that each passage is accurate, necessary, concise, and stated in one place.
+6. In the task summary, report meaningful documentation changes in a sentence or two. Do
+   not list every comment you reviewed.
 
-   The checker reads a `.md` or `.markdown` file as Markdown. It reads any other file as
-   source code, and checks only the comments. See [Source files](#source-files).
-5. Run the manual pass. The checker cannot detect the items in
-   [Manual pass](#manual-pass).
-6. Report what changed. State explicitly when a rule was not applied and why.
+No documentation change is often the correct result. Leave correct documentation as it is.
 
-## Manual pass
+## Edit before you add
 
-The checker cannot detect these. Verify each one before reporting the work complete:
+Prefer these actions, in this order:
 
-- **Terminology.** One term per concept across the whole document set.
-- **Duplication.** The same explanation MUST NOT appear in two documents. Keep one, link
-  the other.
-- **Requirement strength.** Every MUST is a real requirement. Every real requirement has a
-  keyword.
-- **Verification.** Every claim about behaviour is either verified or marked as an
-  assumption.
-- **Speculation.** No requirement, abstraction, or section exists for a hypothetical future
-  need.
-- **Rhetorical framing.** Headings and openers describe content, not the reader's expected
-  reaction.
-- **Articles.** Every sentence has its articles. A heading, a table cell, or a list label
-  may omit them.
+1. Delete prose that is no longer true or no longer needed.
+2. Correct prose that is partly wrong.
+3. Consolidate passages that state the same fact.
+4. Replace an explanation of a superseded design.
+5. Add prose for information that a reader needs and no passage holds. Put it where a
+   reader looks for the subject, usually in an existing section.
 
-## Source files
+The order is a preference. It is not an instruction to delete useful information.
 
-The checker reads a file that is not `.md` or `.markdown` as source code. `--comments`
-reads every file as source code. In source code, the checker checks only comment text:
+- Rewrite an outdated passage. Do not append a correction, an "Update:" note, or a
+  paragraph that explains what changed.
+- Revise an existing paragraph when the revision can hold the new information. Do not add a
+  paragraph beside it.
+- State each fact in one place: the document or comment that owns the subject. Link to it
+  from other places. Before you remove a copy, confirm that the copies state the same fact.
+  When they disagree, the code decides which statement is correct.
 
-- A line that starts with `//`, `#`, `--`, or `;`. A `#` line whose text starts with a C
-  preprocessor directive name is not a comment. The names are `include`, `define`,
-  `undef`, `if`, `ifdef`, `ifndef`, `elif`, `else`, `endif`, `pragma`, `error`, `warning`,
-  and `line`.
-- A `#` or `//` comment after code on the same line, when two conditions hold: whitespace
-  precedes the marker, and the `"` and `'` characters before it on the line are both even
-  in number. A marker inside a string literal does not start a comment.
-- A block between `/*` and `*/`. A `/*` opens a block only at the start of a line or after
-  whitespace. A path glob such as `src/*.go` does not open a block.
-- A block between `"""` and `"""`, or between `'''` and `'''`.
-- A block between `<!--` and `-->`, in HTML, XML, Vue, Svelte, and any other file that
-  uses it.
-- A block between `--[[` and `]]`, in Lua. A `--[[` at the start of a line opens a block,
-  and does not start a `--` line comment.
+## Describe the current system
 
-<!-- A shell continuation line that starts with --, such as a wrapped command's --flag, is
-read as a comment. -->
+Documentation and comments describe current behavior, interfaces, requirements,
+constraints, and the rationale for the current design. They are not a change log.
 
-Inline code spans in a comment are removed before matching. The `tone` rule does not apply
-to a line that starts with `TODO`, `FIXME`, `XXX`, or `NOTE`. A trailing `?` is not
-reported.
+Do not write narration such as the following. Remove it from a passage that you edit:
 
-## Suppression
+- "Previously, the implementation used ..."
+- "This was changed to ..."
+- "We recently introduced ..."
+- "The old approach ..."
+- "During the migration ..."
+- "This was added to fix ..."
 
-Suppress a finding only when the text is correct as written and a rewrite cannot remove the
-finding. Examples are a quoted prompt and a list of excluded words. State the reason in a
-comment next to the suppression.
+Change history belongs in commit messages, pull request descriptions, changelogs, and
+migration guides.
 
-A rule ID is a label that the checker prints: `idiom`, `qualifier`, `filler`,
-`anthropomorphism`, `hype`, `tone`, `chain`, or `length`. `all` means every rule.
+Keep historical information when a current constraint or decision depends on it:
 
-A line that holds only a disable comment suppresses the listed rules. The region ends at a
-line that holds only the matching enable comment, or at the end of the file. A comment
-without a rule ID applies to every rule.
+- "Timestamps use the `Z` suffix because the v1 mobile client rejects `+00:00`" states a
+  current constraint. Keep it.
+- "We moved from MySQL to PostgreSQL in 2023" states history. Remove it, unless a reader
+  needs it to understand the current design.
+- When narration contains a current reason, keep the reason and remove the narration.
+- An issue or ticket ID can stay as the source of a workaround.
 
-```markdown
-<!-- The prompt is quoted from the installer. -->
-<!-- doc-style-disable tone -->
-The installer stops at the prompt Continue?
-<!-- doc-style-enable tone -->
-```
+Some documents record history by design: ADRs, changelogs, migration guides, and release
+notes. Preserve their historical content. Do not rewrite an ADR to describe the current
+state. When a decision changes, follow the project's ADR convention, for example a new ADR
+and a "Superseded" status on the old one. Update the current-state documents separately.
 
-To suppress rules in whole files, add a line to a `.doc-style` file. The line holds a path
-pattern and one or more rule IDs. The pattern matches the path relative to the
-`.doc-style` file, and `*` also matches `/`. A line that starts with `#` is a comment.
+## Comments and docstrings
 
-```text
-# The glossary lists the words that the rules exclude.
-docs/glossary.md   idiom qualifier filler hype
-```
+A comment gives information that the code does not show:
 
-The checker uses the nearest `.doc-style` file between the checked file and the root of its
-git repository. A `.doc-style` file above the repository root does not apply.
+- A constraint or an invariant.
+- The reason for a design decision.
+- A compatibility requirement, or an external contract or behavior.
+- The reason that an apparently simpler approach is incorrect.
+- A defect workaround, with a reference to its source.
 
-To allow a word, add a line of the form `allow WORD...` to the `.doc-style` file. The line
-applies to every file that uses this `.doc-style` file. No rule other than `length` reports
-a match whose whole text is an allowed word. The comparison ignores case. For example,
-`allow magic` allows `magic`, and does not allow `magically`. Use it for a proper noun that
-contains an excluded word, and state the reason in a comment.
+Do not write a comment that restates the code, names the next step, or marks a change, such
+as "new", "updated", or "moved here". When code needs a comment only because its names or
+structure are unclear, prefer clearer code, within the scope of the task.
 
-```text
-# Let's Encrypt is the name of a certificate authority.
-allow let's
-```
+A docstring documents the interface: what a caller can rely on. Describe the parameters,
+the return value, the errors, and the side effects. Do not describe how the function works.
+A performance or thread-safety statement belongs in a docstring only when the interface
+guarantees it and the project documents such guarantees.
 
-## Constraints
+When you change code, reconsider its comments:
 
-- Change prose only. A style rewrite MUST NOT change technical content. State separately
-  when a rewrite exposed a factual error.
-- Do not rewrite documents the task did not ask you to touch.
+- Delete a comment that the change made obsolete.
+- Move a comment whose rationale still applies to the code that it now describes.
+- Do not add a comment that explains the change. The commit message explains the change.
+
+## Accuracy over brevity
+
+- Keep every qualification, assumption, warning, and constraint that is still true. A
+  shorter text that loses one of them is wrong.
+- Do not change executable behavior in a documentation-only edit.
+- Do not invent behavior, requirements, or rationale. When a passage gives no reason, do
+  not supply one.
+- When a rewrite can change technical meaning, establish the meaning from the code, the
+  tests, or the commit history. Ask the user when the evidence is not sufficient.
+- Do not edit documentation that the change does not affect, for style or for any other
+  reason. When you find an error in it, report the error.
+
+## Writing style
+
+- State the subject directly. Do not open with an introduction, a summary of what follows,
+  or rhetorical framing.
+- Use literal language. Replace an idiom or a metaphor with the behavior it describes.
+- Describe what software does: a component reads, writes, sends, or rejects. Do not
+  attribute intent to software when the phrasing hides the mechanism.
+- Remove words that carry no information: filler, empty qualifiers, and promotional words.
+  Judge each word in context. "Usually" is correct when the behavior has exceptions.
+- Use one term for one concept. Do not change terms for variety.
+- Prefer short sentences. Split a sentence that holds unrelated facts. Keep a longer
+  sentence when a split separates a condition from its consequence.
+- Use a list for independent items or steps, a table when items have the same fields, and
+  an example for exact behavior: a command, a path, a value.
+- Use MUST, MUST NOT, SHOULD, and MAY when a document states requirements and their
+  strength matters. Describe behavior in the plain indicative.
+- Distinguish facts, requirements, assumptions, and recommendations when the distinction
+  affects a decision.
+- Match the terminology, heading style, and formatting of the surrounding document.
+
+## Examples
+
+Read the relevant file when the rules above do not settle a decision:
+
+- [examples/maintenance.md](examples/maintenance.md): what to change during code changes
+  and document edits.
+- [examples/rewrites.md](examples/rewrites.md): sentence rewrites for the writing style.

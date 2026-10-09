@@ -1,0 +1,39 @@
+schema_version: "1.0"
+name: docs-still-correct
+description: >-
+  An optimization changes the implementation and not the contract. The agent leaves the correct docstrings and README unchanged and adds no implementation notes.
+tags: [no-change, scope]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: >-
+    Make Directory.find a constant-time lookup: keep a dict of users by ID.
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Edit, Write, Skill]
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?doc-style"'
+    arm: with-only
+  - name: find-docstring-unchanged
+    type: regex
+    pattern: '"""Return the user with the given ID, or None if no user has that ID\."""'
+    target: {source: file, path: directory.py}
+  - name: add-docstring-unchanged
+    type: regex
+    pattern: '"""Add `user`\. Raise ValueError if a user with the same ID exists\."""'
+    target: {source: file, path: directory.py}
+  - name: readme-unchanged
+    type: regex
+    pattern: '- `find\(user_id\)` returns the user with that ID, or `None`\.\n- `add\(user\)` adds a user\. It raises `ValueError` when a user with the same ID exists\.'
+    target: {source: file, path: README.md}
+  - name: no-implementation-notes
+    type: llm
+    focus: {source: file, path: directory.py}
+    criteria: >-
+      No comment or docstring describes the change or the complexity of the lookup, for
+      example "O(1)", "constant time", "instead of scanning the list", or "previously". No
+      comment restates the code, for example "map user IDs to users" above a dict assignment.
+      Docstrings describe only what a caller can rely on.

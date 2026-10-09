@@ -6,13 +6,14 @@ or edit prose.
 
 ## Verification
 
-- Run `tests/run` after a change to the checker, the tests, or the snippets.
-- Run `tests/mutate` after a change to a checker rule.
-- Run `shellcheck` and `shfmt -d` on every changed shell script and `.bats` file.
-- Run `skills/doc-style/scripts/check` on every changed Markdown file.
+- Run `claude plugin validate .` after a change to `.claude-plugin/`, to the skill
+  frontmatter, or to the repository layout.
+- After a change to the skill, its examples, or the primer, run the affected eval cases:
+  `claude plugin eval . --scaffold --allow-tools Edit Write --case NAME`. Ask the user
+  before a run. Each run starts Claude sessions with the user's credentials.
+- Run `shellcheck` and `shfmt -d` on every changed shell script.
 
 ## Constraints
 
 - Do not add a rule, remove a rule, or change a rule's behavior without a request.
-- A fail fixture in `tests/fail/` MUST state its rule in an HTML comment on line 1.
 - Do not mention other agents. The skill targets Claude Code only.

@@ -1,8 +1,0 @@
-comments.go:4: [idiom] load-bearing | // The retry limit is load-bearing.
-comments.go:6: [qualifier] just | /* The worker is just a loop. */
-comments.go:7: [qualifier] really | limit := 3 /* The inline block is really robust. */
-comments.go:7: [hype] robust | limit := 3 /* The inline block is really robust. */
-comments.go:12: [anthropomorphism] talks to | * The scheduler talks to the queue. It sends each jo
-comments.go:12: [length] 26-word sentence: It sends each job to a worker, waits for the   result, w...
-
-Candidates reported. Rewrite each one, or keep it and state the reason.

@@ -1,0 +1,50 @@
+schema_version: "1.0"
+name: behavior-change
+description: >-
+  A feature changes behavior that the README describes. The agent rewrites the README paragraph to describe the new behavior, and does not append a change note.
+tags: [history, proactive]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: >-
+    In client.py, change the retry delay to exponential backoff: wait 1 second before the first retry, and double the wait before each later retry. Keep the maximum of three retries.
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Edit, Write, Skill]
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?doc-style"'
+    arm: with-only
+  - name: old-sentence-removed
+    type: regex
+    pattern: 'waits one second before each\s+retry'
+    match: not_contains
+    target: {source: file, path: README.md}
+  - name: no-change-narration
+    type: regex
+    pattern: 'previously|used to|was changed|changed to|update:|no longer|now uses|now waits|now doubles|instead of a fixed'
+    flags: i
+    match: not_contains
+    target: {source: file, path: README.md}
+  - name: timeouts-untouched
+    type: regex
+    pattern: 'Each request times out after 10 seconds\.'
+    target: {source: file, path: README.md}
+  - name: readme-current
+    type: llm
+    focus: {source: file, path: README.md}
+    criteria: >-
+      The Retries section describes exponential backoff as the current behavior: up to three
+      retries, a wait of 1 second before the first retry, and a doubled wait before each later
+      retry. The section is one coherent description. It does not keep a fixed-delay
+      description, and it does not contain an update note or a description of what changed.
+  - name: code-comments
+    type: llm
+    focus: {source: file, path: client.py}
+    criteria: >-
+      The docstring of get() makes no false statement about the code. A docstring that does
+      not mention the retry delay passes. No comment or docstring describes the change itself,
+      for example "now uses backoff" or "changed from a fixed delay". No comment restates the
+      line below it.

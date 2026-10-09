@@ -1,9 +1,0 @@
-code-end.md:6: [idiom] load-bearing | After the tilde fence the idiom is load-bearing.
-code-end.md:13: [idiom] load-bearing | After the long fence the idiom is load-bearing.
-code-end.md:17: [idiom] load-bearing | After the indented block the idiom is load-bearing.
-code-end.md:19: [idiom] load-bearing | a continuation line that is load-bearing.
-code-end.md:22: [idiom] load-bearing | After the comment the idiom is load-bearing.
-code-end.md:23: [idiom] load-bearing | Before <!-- an inline comment --> the idiom is load-
-code-end.md:27: [idiom] load-bearing | --> After the end of the comment the idiom is load-b
-
-Candidates reported. Rewrite each one, or keep it and state the reason.

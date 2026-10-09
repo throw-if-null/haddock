@@ -1,0 +1,33 @@
+schema_version: "1.0"
+name: narration-comment
+description: >-
+  A comment on changed code mixes change history with a current constraint. The agent keeps the constraint, removes the history, and does not invent a reason.
+tags: [history, comments]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: >-
+    In sync.py, retry each batch once when api.update_stock raises api.Timeout.
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Edit, Write, Skill]
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?doc-style"'
+    arm: with-only
+  - name: narration-removed
+    type: regex
+    pattern: 'originally|in March|June outage|switched to'
+    flags: i
+    match: not_contains
+    target: {source: file, path: sync.py}
+  - name: constraint-kept
+    type: llm
+    focus: {source: file, path: sync.py}
+    criteria: >-
+      A comment next to the batching code states that the inventory API times out on batches
+      larger than 100 IDs, or states the same limit in other words. The file does not describe
+      the history of the batch size. No comment gives a reason for the batch size other than
+      the timeout.

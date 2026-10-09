@@ -6,7 +6,7 @@
     {
       "name": "haddock",
       "source": "./",
-      "description": "The doc-style skill: controlled technical English for documentation, with a checker."
+      "description": "The doc-style skill: maintain documentation and code comments as an accurate, concise description of the current system."
     }
   ]
 }

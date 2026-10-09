@@ -1,3 +1,0 @@
-comments-trailing.go:5: [idiom] load-bearing | limit := 3 // The limit is load-bearing.
-
-Candidates reported. Rewrite each one, or keep it and state the reason.
