@@ -2,6 +2,3 @@
 
 # main.rs only collects the arguments and calls the library.
 exclude_globs = ["crates/check/src/main.rs"]
-
-# The bats suite runs git grep, so the copy of the tree needs the .git entry.
-copy_vcs = true

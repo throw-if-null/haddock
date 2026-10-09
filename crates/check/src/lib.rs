@@ -1,7 +1,7 @@
 //! The doc-style checker. It reports the constructions that the rules in
 //! `skills/doc-style/rules.md` exclude. `skills/doc-style/scripts/check` is the reference
 //! implementation. The output of this crate matches the output of that script byte for
-//! byte, and the bats suite in `tests/` verifies both.
+//! byte. The bats suite in `tests/` and the integration tests of this crate verify both.
 
 mod config;
 mod directive;

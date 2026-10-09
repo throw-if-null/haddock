@@ -1,8 +1,18 @@
 name: Rust
 
-# The Rust port of the checker. A pull request runs once, on the merge result, and only when
-# the crate or one of its build files changes.
+# The Rust port of the checker. It runs only when the crate or one of its build files
+# changes. A pull request runs once, on the merge result. A push runs only on main, after a
+# merge.
 on:
+  push:
+    branches: [main]
+    paths:
+      - crates/**
+      - Cargo.toml
+      - Cargo.lock
+      - rust-toolchain.toml
+      - .cargo/**
+      - .github/workflows/rust.yml
   pull_request:
     paths:
       - crates/**
@@ -23,8 +33,12 @@ jobs:
     steps:
       - name: Check out the repository
         uses: actions/checkout@v7
+        with:
+          # A pull request checks out its merge commit. The first parent of that commit is
+          # the base branch, and the mutation check compares the two.
+          fetch-depth: 2
       - name: Install the pinned tools
-        # tests/run and the conformance test need bats-core from mise.toml.
+        # tests/run needs bats-core from mise.toml.
         uses: jdx/mise-action@v5
       - name: Install the Rust toolchain
         uses: dtolnay/rust-toolchain@master
@@ -49,6 +63,14 @@ jobs:
       - name: Print the processor count
         run: nproc
       - name: Mutation check
+        # A pull request tests only the mutants in the lines that it changes. A push to main
+        # tests every mutant.
         run: |
           TIMEFORMAT='cargo mutants took %0R seconds'
-          time cargo mutants --jobs "$(nproc)"
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            git diff --stat HEAD^1 HEAD
+            git diff HEAD^1 HEAD >"$RUNNER_TEMP/pull-request.diff"
+            time cargo mutants --jobs "$(nproc)" --in-diff "$RUNNER_TEMP/pull-request.diff"
+          else
+            time cargo mutants --jobs "$(nproc)"
+          fi
