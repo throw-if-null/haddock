@@ -1,9 +1,9 @@
 {
   "name": "haddock",
   "version": "0.4.0",
-  "description": "Write and check documentation in controlled technical English with the doc-style skill and its checker.",
+  "description": "The doc-style skill: maintain documentation and code comments as an accurate, concise description of the current system.",
   "author": { "name": "Mirza Merdovic" },
   "repository": "https://github.com/throw-if-null/haddock",
   "license": "MIT",
-  "keywords": ["documentation", "style", "simplified-technical-english"]
+  "keywords": ["documentation", "comments", "technical-writing"]
 }

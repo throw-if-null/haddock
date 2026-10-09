@@ -1,9 +1,0 @@
-suppress-inline.md:3: [idiom] load-bearing | Before the region the idiom is load-bearing.
-suppress-inline.md:6: [qualifier] just | Inside the region the idiom is load-bearing, and the
-suppress-inline.md:9: [idiom] load-bearing | After the region the idiom is load-bearing.
-suppress-inline.md:14: [tone] Is the tone rule back on? | Is the tone rule back on?
-suppress-inline.md:17: [hype] robust | Every rule is back on: robust.
-suppress-inline.md:20: [hype] robust | Two rules are off: load-bearing — robust.
-suppress-inline.md:23: [idiom] load-bearing | The enable comment with all ends the region: load-be
-
-Candidates reported. Rewrite each one, or keep it and state the reason.

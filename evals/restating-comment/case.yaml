@@ -1,0 +1,39 @@
+schema_version: "1.0"
+name: restating-comment
+description: >-
+  A feature adds a retry loop. The agent updates the doc comment to describe the new behavior and does not add comments that restate the code.
+tags: [comments]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: >-
+    Change Fetch in fetch.go to retry. Add a maxAttempts parameter. Fetch tries the request up to maxAttempts times and returns ErrTooManyAttempts when every attempt fails. A transport error or a 5xx response counts as a failure.
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Edit, Write, Skill]
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?doc-style"'
+    arm: with-only
+  - name: signature-changed
+    type: regex
+    pattern: 'maxAttempts int'
+    target: {source: file, path: fetch.go}
+  - name: no-restating-comments
+    type: llm
+    focus: {source: file, path: fetch.go}
+    criteria: >-
+      Inside the body of Fetch, no comment restates what the next line or block does.
+      Examples that fail: "Loop over attempts", "Send the request", "Check for a 5xx status",
+      "Return the response", "Try again". A comment that states a fact the code does not show
+      passes, for example the reason that a response body is closed before a retry.
+  - name: doc-comment-current
+    type: llm
+    focus: {source: file, path: fetch.go}
+    criteria: >-
+      The doc comment on Fetch describes the current behavior: Fetch tries the request up to
+      maxAttempts times, a transport error or a 5xx response counts as a failure, and Fetch
+      returns ErrTooManyAttempts when every attempt fails. The doc comment does not describe
+      the change, for example with "now retries".

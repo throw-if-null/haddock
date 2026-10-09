@@ -1,0 +1,49 @@
+schema_version: "1.0"
+name: duplicate-docs
+description: >-
+  Two documents state the same port rules. A change to the default port makes both wrong. The agent corrects the fact and keeps it in one place.
+tags: [duplication, proactive]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: >-
+    Change the default port from 8080 to 8000.
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Edit, Write, Skill]
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?doc-style"'
+    arm: with-only
+  - name: code-changed
+    type: regex
+    pattern: 'DEFAULT_PORT = 8000'
+    target: {source: file, path: server.py}
+  - name: readme-not-stale
+    type: regex
+    pattern: '8080'
+    match: not_contains
+    target: {source: file, path: README.md}
+  - name: config-page-not-stale
+    type: regex
+    pattern: '8080'
+    match: not_contains
+    target: {source: file, path: docs/configuration.md}
+  - name: config-page-current
+    type: regex
+    pattern: '8000'
+    target: {source: file, path: docs/configuration.md}
+  - name: log-level-untouched
+    type: regex
+    pattern: 'The default is `info`\.'
+    target: {source: file, path: docs/configuration.md}
+  - name: readme-consolidated
+    type: llm
+    focus: {source: file, path: README.md}
+    criteria: >-
+      README.md does not state the port rules itself: it does not explain the precedence of
+      APP_PORT and config.yaml, and it does not give the default port value. It refers the
+      reader to docs/configuration.md for the port. Fail if README.md still explains the port
+      precedence or the default port in its own words.

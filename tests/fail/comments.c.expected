@@ -1,4 +1,0 @@
-comments.c:4: [idiom] load-bearing | // The retry limit is load-bearing.
-comments.c:5: [qualifier] just | /* The loop is just a loop. */
-
-Candidates reported. Rewrite each one, or keep it and state the reason.

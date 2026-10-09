@@ -1,6 +1,0 @@
-chain.md:3: [chain] — | - The job stops — the queue stays.
-chain.md:4: [chain]  --  | - The job stops -- the queue stays.
-chain.md:5: [chain] ;  | - The job stops; the queue stays.
-chain.md:6: [chain] , which | - The job stops, which empties the queue.
-
-Candidates reported. Rewrite each one, or keep it and state the reason.

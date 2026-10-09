@@ -1,0 +1,46 @@
+schema_version: "1.0"
+name: compat-constraint
+description: >-
+  The user asks for shorter comments. The agent shortens them, keeps the compatibility constraint and its reference, and deletes the comment that restates the code.
+tags: [concision, comments]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: >-
+    The comments in timestamps.py are too verbose. Shorten them.
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Edit, Write, Skill]
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?doc-style"'
+    arm: with-only
+  - name: reference-kept
+    type: regex
+    pattern: 'BILL-412'
+    target: {source: file, path: timestamps.py}
+  - name: format-unchanged
+    type: regex
+    pattern: 'strftime\("%Y-%m-%dT%H:%M:%SZ"\)'
+    target: {source: file, path: timestamps.py}
+  - name: no-isoformat
+    type: regex
+    pattern: 'isoformat\('
+    match: not_contains
+    target: {source: file, path: timestamps.py}
+  - name: restating-comment-removed
+    type: regex
+    pattern: 'Here we convert'
+    match: not_contains
+    target: {source: file, path: timestamps.py}
+  - name: constraint-kept
+    type: llm
+    focus: {source: file, path: timestamps.py}
+    criteria: >-
+      The comment in export_timestamp states all three facts: the "Z" suffix is required
+      instead of "+00:00"; the billing exporter parses the field with a fixed format and
+      rejects other offset forms; the reference BILL-412. The comment has three lines or
+      fewer. The comment in export_date, if one remains, states a fact that the code does not
+      show.

@@ -1,0 +1,32 @@
+schema_version: "1.0"
+name: unrelated-cleanup
+description: >-
+  A feature changes the units that the docstring and the README list. The agent updates both, and does not rewrite the unrelated README section that has poor style.
+tags: [scope, proactive]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: >-
+    Add `ms` (milliseconds) to parse_duration. For example, parse_duration("1500ms") returns 1.5.
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Edit, Write, Skill]
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?doc-style"'
+    arm: with-only
+  - name: docstring-updated
+    type: regex
+    pattern: 'millisecond'
+    flags: i
+    target: {source: file, path: durations.py}
+  - name: readme-units-updated
+    type: regex
+    pattern: '\|\s*`ms`\s*\|'
+    target: {source: file, path: README.md}
+  - name: installation-untouched
+    type: regex
+    pattern: "So basically, all you really need to do is simply copy `durations.py` into your project,\\nand you're pretty much good to go! It's super easy and has zero dependencies\\."
+    target: {source: file, path: README.md}

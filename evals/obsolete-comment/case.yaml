@@ -1,0 +1,41 @@
+schema_version: "1.0"
+name: obsolete-comment
+description: >-
+  A refactor removes the code that a comment explains. The agent removes the obsolete comment or replaces it with a statement that is true for the new code.
+tags: [comments, refactor]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: >-
+    In records.py, simplify ordered(): use sorted() instead of copying the list and sorting it in place.
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Edit, Write, Skill]
+graders:
+  - name: skill-loaded
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?doc-style"'
+    arm: with-only
+  - name: obsolete-sentence-removed
+    type: regex
+    pattern: 'sorts in place, so copy the input'
+    match: not_contains
+    target: {source: file, path: records.py}
+  - name: refactor-done
+    type: regex
+    pattern: 'sorted\('
+    target: {source: file, path: records.py}
+  - name: page-untouched
+    type: regex
+    pattern: 'Return page `number` \(starting at 1\) of `records`, `size` items per page\.'
+    target: {source: file, path: records.py}
+  - name: comment-judgment
+    type: llm
+    focus: {source: file, path: records.py}
+    criteria: >-
+      In ordered(), no comment describes copying the list or sorting it in place, because the
+      code does neither. If a comment remains in ordered(), it states a fact that the code does
+      not show, for example that the function must not modify its input. A comment that
+      restates the code, such as "sorted() returns a new list", fails. The docstring of
+      ordered() still states that it returns the records sorted by creation time, oldest first.
