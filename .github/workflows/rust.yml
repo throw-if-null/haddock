@@ -1,0 +1,54 @@
+name: Rust
+
+# The Rust port of the checker. A pull request runs once, on the merge result, and only when
+# the crate or one of its build files changes.
+on:
+  pull_request:
+    paths:
+      - crates/**
+      - Cargo.toml
+      - Cargo.lock
+      - rust-toolchain.toml
+      - .cargo/**
+      - .github/workflows/rust.yml
+
+# An explicit shell runs each step with -e and -o pipefail. The default shell sets only -e.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  rust:
+    runs-on: ubuntu-${{ vars.UBUNTU_VERSION }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+      - name: Install the pinned tools
+        # tests/run and the conformance test need bats-core from mise.toml.
+        uses: jdx/mise-action@v5
+      - name: Install the Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          # The version MUST match the channel in rust-toolchain.toml.
+          toolchain: 1.99.0
+          components: rustfmt, clippy
+      - name: Cache the Cargo build
+        uses: Swatinem/rust-cache@v2
+      - name: Install cargo-mutants
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-mutants@27.1.0
+      - name: cargo fmt
+        run: cargo fmt --check
+      - name: cargo clippy
+        run: cargo clippy -- -D warnings
+      - name: cargo build
+        run: cargo build --release
+      - name: Test suite against the release binary
+        run: CHECK="$PWD/target/release/doc-style-check" tests/run
+      - name: Print the processor count
+        run: nproc
+      - name: Mutation check
+        run: |
+          TIMEFORMAT='cargo mutants took %0R seconds'
+          time cargo mutants --jobs "$(nproc)"
