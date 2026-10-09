@@ -24,7 +24,7 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v7
       - name: Install the pinned tools
-        # tests/run and the conformance test need bats-core from mise.toml.
+        # tests/run needs bats-core from mise.toml.
         uses: jdx/mise-action@v5
       - name: Install the Rust toolchain
         uses: dtolnay/rust-toolchain@master
