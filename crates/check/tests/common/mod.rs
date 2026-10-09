@@ -8,10 +8,13 @@
 // unused in that crate.
 #![allow(dead_code)]
 
+use std::borrow::Cow;
 use std::fmt;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+
+use tempfile::TempDir;
 
 /// The result of one checker run. stdout and stderr stay bytes, because a snippet can end
 /// inside a multi-byte character.
@@ -19,6 +22,23 @@ pub struct Run {
     pub status: i32,
     pub stdout: Vec<u8>,
     pub stderr: Vec<u8>,
+}
+
+impl Run {
+    /// Return stdout as text. An invalid byte becomes U+FFFD.
+    pub fn stdout_text(&self) -> Cow<'_, str> {
+        String::from_utf8_lossy(&self.stdout)
+    }
+
+    /// Return stderr as text. An invalid byte becomes U+FFFD.
+    pub fn stderr_text(&self) -> Cow<'_, str> {
+        String::from_utf8_lossy(&self.stderr)
+    }
+
+    /// Report whether the checker exited 0 and printed nothing.
+    pub fn reports_nothing(&self) -> bool {
+        self.status == 0 && self.stdout.is_empty() && self.stderr.is_empty()
+    }
 }
 
 // Display gives the text that an assertion message shows: `assert!(..., "{run}")`.
@@ -67,6 +87,53 @@ pub fn check(dir: &Path, args: &[&str]) -> Run {
             .expect("the checker exits with a status"),
         stdout: output.stdout,
         stderr: output.stderr,
+    }
+}
+
+/// A git repository in a new temporary directory, for one test. The repository is the
+/// directory `repo` with a `.git` directory, and the checker runs in it. A path that a
+/// method takes is relative to `repo`, so `..` is the temporary directory.
+pub struct Repo {
+    // TempDir removes the directory when the value is dropped, as `defer os.RemoveAll(dir)`
+    // does in Go.
+    temp: TempDir,
+}
+
+impl Repo {
+    pub fn new() -> Self {
+        let repo = Repo {
+            temp: TempDir::new().expect("a temporary directory"),
+        };
+        repo.mkdir(".git");
+        repo
+    }
+
+    fn path(&self, path: &str) -> PathBuf {
+        self.temp.path().join("repo").join(path)
+    }
+
+    /// Create the directory at `path` and its parent directories.
+    pub fn mkdir(&self, path: &str) {
+        let path = self.path(path);
+        fs::create_dir_all(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+    }
+
+    /// Write `text` to the file at `path`, and create its parent directories.
+    pub fn write(&self, path: &str, text: &str) {
+        let path = self.path(path);
+        let parent = path.parent().expect("the path has a parent directory");
+        fs::create_dir_all(parent).unwrap_or_else(|error| panic!("{}: {error}", parent.display()));
+        fs::write(&path, text).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+    }
+
+    /// Run the checker in `repo` with `args`.
+    pub fn check(&self, args: &[&str]) -> Run {
+        check(&self.path(""), args)
+    }
+
+    /// Run the checker in the directory at `dir` with `args`.
+    pub fn check_in(&self, dir: &str, args: &[&str]) -> Run {
+        check(&self.path(dir), args)
     }
 }
 

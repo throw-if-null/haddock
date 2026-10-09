@@ -8,10 +8,7 @@ use common::{check, tests_dir};
 /// Run the checker on `fixture` in `tests/pass`, and assert that it reports nothing.
 fn passes(fixture: &str) {
     let run = check(&tests_dir("pass"), &[fixture]);
-    assert!(
-        run.status == 0 && run.stdout.is_empty() && run.stderr.is_empty(),
-        "{run}"
-    );
+    assert!(run.reports_nothing(), "{run}");
 }
 
 #[test]
