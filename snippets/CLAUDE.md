@@ -1,6 +1,6 @@
 ## Documentation maintenance
 
-Use the `doc-style` skill whenever you change code, and before you write or edit
+Use the `doc-maintenance` skill whenever you change code, and before you write or edit
 documentation, comments, docstrings, commit messages, or pull request descriptions. The
 skill holds the full rules. In summary:
 

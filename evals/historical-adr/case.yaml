@@ -15,7 +15,7 @@ graders:
   - name: skill-loaded
     type: tool_used
     tool: Skill
-    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?doc-style"'
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?doc-maintenance"'
     arm: with-only
   - name: adr-context-kept
     type: regex
@@ -29,6 +29,13 @@ graders:
     type: regex
     pattern: 'Status: Superseded'
     target: {source: file, path: docs/adr/0004-store-jobs-in-postgresql.md}
+  - name: new-adr-created
+    type: file_exists
+    path: docs/adr/0005-*.md
+  - name: new-adr-decision
+    type: tool_used
+    tool: Write
+    input_match: '^(?=[\s\S]*"file_path"\s*:\s*"[^"]*docs/adr/0005-[^"]*\.md")(?=[\s\S]*## Decision(?:(?!\\n## )[\s\S])*Redis)'
   - name: architecture-not-stale
     type: regex
     pattern: 'Jobs are stored in the PostgreSQL'
