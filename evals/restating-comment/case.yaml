@@ -1,7 +1,7 @@
 schema_version: "1.0"
 name: restating-comment
 description: >-
-  A feature adds a retry loop. The agent updates the doc comment to describe the new behavior and does not add comments that restate the code.
+  A feature adds a retry loop. The agent implements the retry, updates the doc comment to describe the new behavior, and does not add comments that restate the code.
 tags: [comments]
 context:
   scaffold_script: scaffold.sh
@@ -15,12 +15,22 @@ graders:
   - name: skill-loaded
     type: tool_used
     tool: Skill
-    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?doc-style"'
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?doc-maintenance"'
     arm: with-only
   - name: signature-changed
     type: regex
     pattern: 'maxAttempts int'
     target: {source: file, path: fetch.go}
+  - name: retry-implemented
+    type: llm
+    focus: {source: file, path: fetch.go}
+    criteria: >-
+      Fetch implements the requested retry behavior. Judge the behavior, not the code
+      structure. Fetch sends the request at most maxAttempts times. A transport error or a
+      response with a status from 500 to 599 is a failed attempt, and Fetch tries again while
+      attempts remain. Fetch returns the first response with a status below 500, with a nil
+      error, and does not retry it. When every attempt fails, Fetch returns ErrTooManyAttempts
+      or an error that wraps it, so that errors.Is(err, ErrTooManyAttempts) is true.
   - name: no-restating-comments
     type: llm
     focus: {source: file, path: fetch.go}

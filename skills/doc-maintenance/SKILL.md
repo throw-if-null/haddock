@@ -1,5 +1,5 @@
 ---
-name: doc-style
+name: doc-maintenance
 description: Keep code comments, docstrings, and documentation accurate when code changes. Update, consolidate, or delete the prose that a change makes wrong or redundant, and write documentation that is direct, concise, and free of change history.
 when_to_use: Use whenever you edit code (a feature, bug fix, refactor, rename, optimization, or removal), even when the user asks only for the code change and does not mention documentation or comments. Also use it before you write or edit a README, docs/ page, runbook, ADR, CLAUDE.md, code comment, docstring, commit message, or pull request description, and when you review prose or comments for clarity, concision, duplication, or outdated content.
 ---
@@ -42,8 +42,9 @@ repository.
      configuration key, environment variable, endpoint, or error message. Search the
      repository for these names.
    - Documents that describe the changed behavior without naming an identifier, for
-     example a table of supported values. Read the README section and the documentation
-     page that cover the changed component.
+     example a table of supported values. A search for the changed names does not find
+     them. Read the README section and the documentation page that cover the changed
+     component, even when the search finds no match.
 3. Compare each passage with the code after the change. Decide what a reader needs to know
    now.
 4. Edit the affected passages, and only those, so that they are accurate. When two of them
@@ -121,9 +122,11 @@ Do not write a comment that restates the code, names the next step, or marks a c
 as "new", "updated", or "moved here". When code needs a comment only because its names or
 structure are unclear, prefer clearer code, within the scope of the task.
 
-A docstring documents the interface: what a caller can rely on. Describe the parameters,
-the return value, the errors, and the side effects. Do not describe how the function works.
-A performance or thread-safety statement belongs in a docstring only when the interface
+A docstring documents the interface: what a caller can rely on. When a docstring is
+necessary, document the non-obvious caller-visible contract, including relevant
+constraints, errors, and side effects. Do not repeat information already clear from the
+signature, types, or surrounding code. Do not describe how the function works. A
+performance or thread-safety statement belongs in a docstring only when the interface
 guarantees it and the project documents such guarantees.
 
 When you change code, reconsider its comments:

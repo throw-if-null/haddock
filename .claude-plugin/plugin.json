@@ -1,7 +1,7 @@
 {
   "name": "haddock",
-  "version": "0.4.0",
-  "description": "The doc-style skill: maintain documentation and code comments as an accurate, concise description of the current system.",
+  "version": "0.5.0",
+  "description": "The doc-maintenance skill: maintain documentation and code comments as an accurate, concise description of the current system.",
   "author": { "name": "Mirza Merdovic" },
   "repository": "https://github.com/throw-if-null/haddock",
   "license": "MIT",

@@ -15,7 +15,7 @@ graders:
   - name: skill-loaded
     type: tool_used
     tool: Skill
-    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?doc-style"'
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?doc-maintenance"'
     arm: with-only
   - name: reference-kept
     type: regex

@@ -1,8 +1,8 @@
 # haddock
 
-A Claude Code plugin that holds the `doc-style` skill. The skill makes Claude maintain
-documentation and code comments as an accurate, concise description of the current system.
-Documentation is maintained, not accumulated.
+A Claude Code plugin that holds the `doc-maintenance` skill. The skill makes Claude
+maintain documentation and code comments as an accurate, concise description of the
+current system. Documentation is maintained, not accumulated.
 
 ## What the skill does
 
@@ -23,9 +23,9 @@ Simplified Technical English. It does not implement that standard.
 
 | Path | Content |
 | --- | --- |
-| `skills/doc-style/SKILL.md` | The workflow and the rules. |
-| `skills/doc-style/examples/maintenance.md` | Maintenance decisions, with the text before and after. |
-| `skills/doc-style/examples/rewrites.md` | Sentence rewrites for the writing style. |
+| `skills/doc-maintenance/SKILL.md` | The workflow and the rules. |
+| `skills/doc-maintenance/examples/maintenance.md` | Maintenance decisions, with the text before and after. |
+| `skills/doc-maintenance/examples/rewrites.md` | Sentence rewrites for the writing style. |
 | `snippets/CLAUDE.md` | The primer: a summary that directs Claude to apply the skill to every code change. |
 | `hooks/hooks.json` | The `SessionStart` hook that prints the primer into the session context. |
 | `evals/` | The eval cases for `claude plugin eval`. |
@@ -42,11 +42,11 @@ then install the plugin:
 /plugin install haddock@throw-if-null
 ```
 
-Claude Code loads the skill when a task matches its description, and `/haddock:doc-style`
-loads it on demand. A task that asks only for a code change does not reliably match the
-description. The plugin's `SessionStart` hook therefore prints the primer into the context
-of each session, including a session that resumes or compacts. The primer directs Claude to
-apply the skill to every code change.
+Claude Code loads the skill when a task matches its description, and
+`/haddock:doc-maintenance` loads it on demand. A task that asks only for a code change does
+not reliably match the description. The plugin's `SessionStart` hook therefore prints the
+primer into the context of each session, including a session that resumes or compacts. The
+primer directs Claude to apply the skill to every code change.
 
 To try the plugin without installing it, start a session with
 `claude --plugin-dir /path/to/haddock`.
@@ -58,10 +58,10 @@ personal skills:
 
 ```bash
 git clone https://github.com/throw-if-null/haddock.git ~/.local/share/haddock
-ln -s ~/.local/share/haddock/skills/doc-style ~/.claude/skills/doc-style
+ln -s ~/.local/share/haddock/skills/doc-maintenance ~/.claude/skills/doc-maintenance
 ```
 
-`/doc-style` then loads the skill on demand, and `/skills` lists it.
+`/doc-maintenance` then loads the skill on demand, and `/skills` lists it.
 
 To install the skill for one project instead, link it into the project's `.claude/skills/`
 directory.
@@ -80,13 +80,16 @@ task, and graders. The `description` in each `case.yaml` states the behavior tha
 tests. The graders check the files that Claude leaves in the workspace.
 
 ```bash
-claude plugin eval . --scaffold --allow-tools Edit Write
+claude plugin eval . --scaffold --allow-tools Edit Write --judge-model sonnet
 ```
 
 - `--scaffold` runs the `scaffold.sh` of each case. The script copies the case's
   `workspace/` directory into the run directory. It runs as you, outside the sandbox.
 - `--allow-tools Edit Write` grants the file edits that the cases request. Without the
   grant, Claude cannot change the workspace. The cases do not request Bash.
+- `--judge-model sonnet` sets the model of the LLM graders. The default judge, Haiku,
+  answers without extended thinking and fails correct code in the `retry-implemented`
+  grader.
 - Each run starts a Claude session with your credentials. By default, each case runs 3
   times with the plugin and 3 times without it. `--runs`, `--case`, and `--max-cost-usd`
   limit the cost.
