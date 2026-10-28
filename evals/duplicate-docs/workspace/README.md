@@ -1,16 +1,12 @@
-# orders-api
+# upload-service
 
-The HTTP API for orders.
+Stores user uploads and serves them by ID.
 
-## Run
+## Clean up
 
-```bash
-python server.py
-```
+`python cleanup.py` deletes the expired uploads. A cron job runs it every hour.
 
-## Configuration
+## Retention
 
-The server reads its port from `APP_PORT`. When `APP_PORT` is not set, it uses `port`
-from `config.yaml`, and then 8080.
-
-[docs/configuration.md](docs/configuration.md) describes each setting.
+An upload expires 30 days after its last modification. Set `UPLOAD_RETENTION_DAYS` to
+change the number of days.
