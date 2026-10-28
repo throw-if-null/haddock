@@ -1,13 +1,13 @@
 schema_version: "1.0"
 name: duplicate-docs
 description: >-
-  Two documents state the same port rules. A change to the default port makes both wrong. The agent corrects the fact and keeps it in one place.
+  Two documents state the same retention rule. A change to the default retention period makes both wrong. The agent corrects the fact and keeps it in one place.
 tags: [duplication, proactive]
 context:
   scaffold_script: scaffold.sh
 execution:
   prompt: >-
-    Change the default port from 8080 to 8000.
+    Change the default upload retention from 30 days to 14 days.
   max_turns: 25
   timeout_seconds: 600
   allowed_tools: [Read, Glob, Grep, Edit, Write, Skill]
@@ -19,31 +19,32 @@ graders:
     arm: with-only
   - name: code-changed
     type: regex
-    pattern: 'DEFAULT_PORT = 8000'
-    target: {source: file, path: server.py}
+    pattern: 'RETENTION_DAYS = 14'
+    target: {source: file, path: cleanup.py}
   - name: readme-not-stale
     type: regex
-    pattern: '8080'
+    pattern: '30'
     match: not_contains
     target: {source: file, path: README.md}
-  - name: config-page-not-stale
+  - name: operations-page-not-stale
     type: regex
-    pattern: '8080'
+    pattern: '30'
     match: not_contains
-    target: {source: file, path: docs/configuration.md}
-  - name: config-page-current
+    target: {source: file, path: docs/operations.md}
+  - name: operations-page-current
     type: regex
-    pattern: '8000'
-    target: {source: file, path: docs/configuration.md}
-  - name: log-level-untouched
+    pattern: '14'
+    target: {source: file, path: docs/operations.md}
+  - name: backups-untouched
     type: regex
-    pattern: 'The default is `info`\.'
-    target: {source: file, path: docs/configuration.md}
+    pattern: 'It keeps the last seven backups\.'
+    target: {source: file, path: docs/operations.md}
   - name: readme-consolidated
     type: llm
     focus: {source: file, path: README.md}
     criteria: >-
-      README.md does not state the port rules itself: it does not explain the precedence of
-      APP_PORT and config.yaml, and it does not give the default port value. It refers the
-      reader to docs/configuration.md for the port. Fail if README.md still explains the port
-      precedence or the default port in its own words.
+      README.md does not state the retention rule itself: it does not give the number of days
+      after which an upload expires, and it does not explain what UPLOAD_RETENTION_DAYS does.
+      It refers the reader to docs/operations.md for the retention period. A reference that
+      names the subject or the variable passes. Fail if README.md still states the number of
+      days or explains the variable in its own words.
